@@ -3,8 +3,8 @@ Fishtown,Monday,11:00,16
 Fishtown,Monday,12:00,32
 Fishtown,Monday,13:00,24
 Fishtown,Monday,14:00,8
-Fishtown,Monday,15:00,4
-Fishtown,Monday,16:00,12
+Fishtown,Monday,15:00,8
+Fishtown,Monday,16:00,8
 Fishtown,Monday,17:00,24
 Fishtown,Monday,18:00,32
 Fishtown,Monday,19:00,24
@@ -19,13 +19,13 @@ Fishtown,Tuesday,17:00,24
 Fishtown,Tuesday,18:00,32
 Fishtown,Tuesday,19:00,24
 Fishtown,Tuesday,20:00,16
-Fishtown,Wednesday,11:00,16
-Fishtown,Wednesday,12:00,40
+Fishtown,Wednesday,11:00,20
+Fishtown,Wednesday,12:00,36
 Fishtown,Wednesday,13:00,24
 Fishtown,Wednesday,14:00,8
 Fishtown,Wednesday,15:00,8
-Fishtown,Wednesday,16:00,8
-Fishtown,Wednesday,17:00,24
+Fishtown,Wednesday,16:00,12
+Fishtown,Wednesday,17:00,20
 Fishtown,Wednesday,18:00,36
 Fishtown,Wednesday,19:00,28
 Fishtown,Wednesday,20:00,12
@@ -33,8 +33,8 @@ Fishtown,Thursday,11:00,20
 Fishtown,Thursday,12:00,40
 Fishtown,Thursday,13:00,28
 Fishtown,Thursday,14:00,8
-Fishtown,Thursday,15:00,8
-Fishtown,Thursday,16:00,12
+Fishtown,Thursday,15:00,12
+Fishtown,Thursday,16:00,8
 Fishtown,Thursday,17:00,32
 Fishtown,Thursday,18:00,36
 Fishtown,Thursday,19:00,20
@@ -63,19 +63,19 @@ Fishtown,Sunday,11:00,20
 Fishtown,Sunday,12:00,40
 Fishtown,Sunday,13:00,28
 Fishtown,Sunday,14:00,8
-Fishtown,Sunday,15:00,8
-Fishtown,Sunday,16:00,12
+Fishtown,Sunday,15:00,12
+Fishtown,Sunday,16:00,8
 Fishtown,Sunday,17:00,36
 Fishtown,Sunday,18:00,36
 Fishtown,Sunday,19:00,20
 Fishtown,Sunday,20:00,24
-Northern Liberties,Monday,11:00,12
-Northern Liberties,Monday,12:00,28
+Northern Liberties,Monday,11:00,16
+Northern Liberties,Monday,12:00,24
 Northern Liberties,Monday,13:00,20
 Northern Liberties,Monday,14:00,4
-Northern Liberties,Monday,15:00,4
+Northern Liberties,Monday,15:00,8
 Northern Liberties,Monday,16:00,8
-Northern Liberties,Monday,17:00,20
+Northern Liberties,Monday,17:00,16
 Northern Liberties,Monday,18:00,24
 Northern Liberties,Monday,19:00,20
 Northern Liberties,Monday,20:00,12
@@ -84,8 +84,8 @@ Northern Liberties,Tuesday,12:00,28
 Northern Liberties,Tuesday,13:00,16
 Northern Liberties,Tuesday,14:00,4
 Northern Liberties,Tuesday,15:00,8
-Northern Liberties,Tuesday,16:00,8
-Northern Liberties,Tuesday,17:00,20
+Northern Liberties,Tuesday,16:00,12
+Northern Liberties,Tuesday,17:00,16
 Northern Liberties,Tuesday,18:00,28
 Northern Liberties,Tuesday,19:00,20
 Northern Liberties,Tuesday,20:00,12
@@ -113,8 +113,8 @@ Northern Liberties,Friday,11:00,24
 Northern Liberties,Friday,12:00,40
 Northern Liberties,Friday,13:00,24
 Northern Liberties,Friday,14:00,12
-Northern Liberties,Friday,15:00,4
-Northern Liberties,Friday,16:00,12
+Northern Liberties,Friday,15:00,8
+Northern Liberties,Friday,16:00,8
 Northern Liberties,Friday,17:00,28
 Northern Liberties,Friday,18:00,40
 Northern Liberties,Friday,19:00,20
@@ -133,8 +133,8 @@ Northern Liberties,Sunday,11:00,16
 Northern Liberties,Sunday,12:00,36
 Northern Liberties,Sunday,13:00,24
 Northern Liberties,Sunday,14:00,8
-Northern Liberties,Sunday,15:00,4
-Northern Liberties,Sunday,16:00,12
+Northern Liberties,Sunday,15:00,8
+Northern Liberties,Sunday,16:00,8
 Northern Liberties,Sunday,17:00,24
 Northern Liberties,Sunday,18:00,36
 Northern Liberties,Sunday,19:00,24

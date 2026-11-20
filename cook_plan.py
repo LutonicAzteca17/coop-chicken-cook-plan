@@ -26,6 +26,7 @@ WEEKS_OF_HISTORY = 6     # how many recent weeks the forecast averages
 BUFFER = 0.30            # cook 30% above the forecast (tested: best balance of waste vs running out)
 ROUND_TO = 4             # drop in multiples of 4 pieces
 MIN_DROP = 4             # never drop fewer than this in a cook hour
+MIN_EXTRA = 4            # ...but always at least 4 pieces above the forecast (protects slow afternoon hours)
 STOCKOUT_UPLIFT = 1.15   # when an hour sold out, assume real demand was 15% higher
 COST_PER_PIECE = 1.10    # what one raw piece costs (from Dre)
 CURRENT_BATCH = 24       # today's fixed batch, used for the before/after comparison
@@ -171,7 +172,7 @@ def build_plan(demand, cook_hours, until=None):
         leftover = 0.0
         for h in cook_hours:
             f = forecast[(loc, wd, h)]
-            need = f * (1 + BUFFER) - leftover
+            need = max(f * (1 + BUFFER), f + MIN_EXTRA) - leftover
             drop = max(MIN_DROP, ROUND_TO * math.ceil(need / ROUND_TO))
             plan[(loc, wd)][h] = drop
             leftover = max(0.0, leftover + drop - f)

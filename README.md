@@ -11,7 +11,7 @@ A screen for above the fry line that tells the cook how many pieces of chicken t
 - The number changes on its own every hour.
 - The line under it tells you the next drop, so you can get ready.
 - If you tap a different day by accident, tap **Back to today**.
-- **Running out before the next drop? Drop 8 more.** (This is on the screen too.)
+- **Running out before the next drop? Drop 4 more.** (This is on the screen too.)
 - If you keep running out, or you're throwing out a lot, tell your manager.
 
 ## Setting up the screen (one time, 2 minutes)
@@ -46,7 +46,7 @@ Each run saves the plan it made in `plans/`. The next run uses that file to know
 
 - **Forecast:** the average pieces sold in that hour, on that weekday, at that store, over the last 6 weeks.
 - **Sold-out hours:** Toast only records what was sold. When the warmer ran empty (mostly Fri to Sun at 12 to 1 PM), real demand was higher, so those hours are counted 15% higher.
-- **Drop size:** the forecast plus a 30% safety margin, minus what is probably still in the warmer from the last drop, rounded up to a multiple of 4. Sales after the last drop (9 PM) are covered by the 8 PM drop.
+- **Drop size:** the forecast plus a 30% safety margin (at least 4 extra pieces, so slow afternoon hours aren't cut too thin), minus what is probably still in the warmer from the last drop, rounded up to a multiple of 4. Sales after the last drop (9 PM) are covered by the 8 PM drop.
 - All settings are at the top of `cook_plan.py`.
 
 ## Does it work?
@@ -55,12 +55,17 @@ The plan was built only from data through Sep 20, then replayed against the 4 we
 
 | Per week | Fixed 24/hour | This plan |
 |---|---|---|
-| Pieces thrown out, Fishtown | 244 | 63 |
-| Pieces thrown out, Northern Liberties | 421 | 67 |
-| Pieces customers wanted but couldn't get (both stores) | 50 | 23 |
-| Waste cost at $1.10/piece (both stores) | ~$732 | ~$143 |
+| Pieces thrown out, Fishtown | 244 | 62 |
+| Pieces thrown out, Northern Liberties | 421 | 63 |
+| Pieces customers wanted but couldn't get (both stores) | 50 | 18 |
+| ...with the "drop 4 more" backup rule | | 1 |
+| Waste cost at $1.10/piece (both stores) | ~$732 | ~$138 |
 
 That's about **$590 a week, or roughly $30K a year**, less chicken in the trash, with fewer lunch-rush sellouts.
+
+## Why "drop 4 more"
+
+In the 4-week test, 30 of the 32 hours that ran short were short by 4 pieces or fewer (none by more than 5). Replaying those weeks with the rule "if the warmer runs out before the next drop, drop 4 more" cut pieces customers couldn't get from 18 a week to about 1, for only about 4 extra pieces of waste a week. Dropping 8 instead added more waste (about 13 a week) without fixing more shortages.
 
 ## Assumptions to confirm with the kitchen
 
