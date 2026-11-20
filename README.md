@@ -71,7 +71,7 @@ On the same 6 weeks of real sales, the plan alone leaves the warmer empty about 
 
 ## What we don't know yet
 
-Toast only records what was sold, so it can't count customers who left because there was no chicken. When the warmer ran empty (about 11 hours a week, almost all at noon and 1 PM, Thursday to Sunday), the plan cooks 15% more than what sold in that hour (the `STOCKOUT_UPLIFT` setting). During the first test week, a simple in-store tally of customers who ask for chicken when none is ready will show whether that 15% should be higher or lower.
+Toast only records what was sold, so it can't count customers who left because there was no chicken. When the warmer ran empty (about 11 hours a week, almost all at noon and 1 PM, Thursday to Sunday), the plan cooks 15% more than what sold in that hour (the `STOCKOUT_UPLIFT` setting). During the first test week, a simple in-store tally of customers who ask for chicken when none is ready will show whether that 15% should be higher or lower. Print the one-page tally sheet: https://lutonicazteca17.github.io/coop-chicken-cook-plan/tally.html
 
 ## Assumptions to confirm with the kitchen
 
