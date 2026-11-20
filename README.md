@@ -2,7 +2,7 @@
 
 A fry-station screen that tells the kitchen how many pieces of chicken to drop each hour, for each location and day of the week. It replaces the fixed 24 pieces every hour.
 
-**Open `index.html`.** Tap your store. The big yellow number is what to drop right now. The list below it is the rest of today, and the grid shows the whole week. It works on a phone, tablet, or printed sheet.
+**Open `index.html`.** Tap your store. The big yellow number is what to drop right now. The list below it is the rest of today. It works on a phone, tablet, or a screen above the fry line.
 
 ## Updating it each week
 

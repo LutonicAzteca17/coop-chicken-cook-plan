@@ -49,11 +49,6 @@
 
   <table id="today"></table>
 
-  <h2>Whole week</h2>
-  <div class="week" id="week"></div>
-
-  <h2>How this works</h2>
-  <div class="small" id="about"></div>
 </main>
 
 <script>
@@ -113,21 +108,6 @@ function render() {
     hours.map(x => `<tr class="${live && x===h ? 'cur' : (live && x<h ? 'past':'')}"><td>${pretty(x)}</td><td class="n">${plan[x]}</td></tr>`).join("") +
     `<tr><td>Total today <span class="was">(was ${hours.length * 24})</span></td><td class="n">${total}</td></tr>`;
 
-  // Week grid
-  document.getElementById("week").innerHTML = "<table><tr><th>" + loc + "</th>" +
-    D.days.map(d=>`<th>${d.slice(0,3)}</th>`).join("") + "</tr>" +
-    hours.map(x => `<tr><td>${pretty(x)}</td>` + D.days.map(d=>`<td>${D.plan[loc][d][x]}</td>`).join("") + "</tr>").join("") +
-    "<tr><td><b>Total</b></td>" + D.days.map(d=>`<td><b>${hours.reduce((s,x)=>s+D.plan[loc][d][x],0)}</b></td>`).join("") + "</tr></table>";
-
-  const b = D.backtest[loc];
-  document.getElementById("about").innerHTML =
-    `Plan for the week of ${D.week_of}, built from Toast sales through ${D.data_through}. ` +
-    `Each number is the average sold in that hour on that weekday over the last 6 weeks, plus 30% safety, minus what is likely still in the warmer from the last drop, rounded up to a multiple of 4. ` +
-    `Hours that sold out are counted 15% higher, since Toast can't see the customers who left. Sales after the last drop are covered by the last drop.<br><br>` +
-    `<b>Tested on ${D.backtest_range}</b> (plan built only from earlier weeks), per week at ${loc}: ` +
-    `waste <span class="stat">${Math.round(b.old_waste)} → ${Math.round(b.new_waste)} pieces</span> (${b.old_waste_lbs} → ${b.new_waste_lbs} lbs, about $${Math.round(b.old_waste*D.cost_per_piece)} → $${Math.round(b.new_waste*D.cost_per_piece)} a week), ` +
-    `pieces customers wanted but could not get <span class="stat">${Math.round(b.old_short)} → ${Math.round(b.new_short)}</span>.<br><br>` +
-    `If an hour runs out, or you're tossing a lot, tell your manager. The plan updates every week from the new Toast export.`;
 }
 function setLoc(l){ loc = l; localSet("loc", l); render(); }
 document.getElementById("day").onchange = e => { day = e.target.value; render(); };
