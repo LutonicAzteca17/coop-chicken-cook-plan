@@ -33,6 +33,17 @@
   .small { font-size: 15px; color: var(--mute); line-height:1.5; }
   .stat { color: var(--good); font-weight:700; }
   @media (max-width: 500px) { .now .big { font-size: 72px; } table { font-size: 22px; } }
+  .wk { margin-top: 32px; }
+  .wk h2 { font-size: 24px; color: var(--fg); margin: 0 0 4px; }
+  .wk .legend { font-size: 16px; color: var(--mute); margin-bottom: 10px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .wk .sw { display:inline-block; width:18px; height:18px; border-radius:4px; vertical-align:middle; }
+  .wk table { font-size: 17px; table-layout: fixed; }
+  .wk th, .wk td { padding: 8px 2px; text-align: center; border-bottom: 1px solid var(--bg); }
+  .wk th:first-child, .wk td:first-child { text-align: left; padding-left: 6px; width: 64px; color: var(--mute); }
+  .wk td.c { font-weight: 800; border-radius: 4px; }
+  .wk th.today { color: var(--hi); }
+  .wk td.today { outline: 2px solid var(--hi); outline-offset: -2px; }
+  .wk tr.tot td { color: var(--fg); font-weight: 700; border-top: 2px solid var(--line); }
   @media print { body { background:#fff; color:#000; } .now, button, select { display:none; } }
 </style>
 </head>
@@ -48,6 +59,14 @@
   <div class="next" id="next"></div>
 
   <table id="today"></table>
+
+  <div class="wk">
+    <h2 id="wktitle"></h2>
+    <div class="legend"><span class="sw" style="background:#3a3320"></span> slow
+      <span class="sw" style="background:#8a7414"></span>
+      <span class="sw" style="background:#ffcc00"></span> busy &nbsp;·&nbsp; outlined = today</div>
+    <table id="week"></table>
+  </div>
 
 </main>
 
@@ -108,6 +127,20 @@ function render() {
     hours.map(x => `<tr class="${live && x===h ? 'cur' : (live && x<h ? 'past':'')}"><td>${pretty(x)}</td><td class="n">${plan[x]}</td></tr>`).join("") +
     `<tr><td>Total today <span class="was">(was ${hours.length * 24})</span></td><td class="n">${total}</td></tr>`;
 
+  // Week snapshot: one color per busyness level, today outlined
+  const all = D.days.flatMap(d => hours.map(x => D.plan[loc][d][x]));
+  const lo = Math.min(...all), hi = Math.max(...all);
+  const shade = n => {
+    const f = (n - lo) / ((hi - lo) || 1);
+    const mix = (a, b) => Math.round(a + (b - a) * f);
+    return `background:rgb(${mix(58,255)},${mix(51,204)},${mix(32,0)});color:${f > 0.65 ? '#000' : '#fff'}`;
+  };
+  document.getElementById("wktitle").textContent = "This week at " + loc;
+  document.getElementById("week").innerHTML =
+    "<tr><th></th>" + D.days.map(d => `<th class="${d===dayName?'today':''}">${d.slice(0,3)}</th>`).join("") + "</tr>" +
+    hours.map(x => `<tr><td>${pretty(x)}</td>` + D.days.map(d =>
+      `<td class="c ${d===dayName?'today':''}" style="${shade(D.plan[loc][d][x])}">${D.plan[loc][d][x]}</td>`).join("") + "</tr>").join("") +
+    `<tr class="tot"><td>Total</td>` + D.days.map(d => `<td>${hours.reduce((s,x)=>s+D.plan[loc][d][x],0)}</td>`).join("") + "</tr>";
 }
 function setLoc(l){ loc = l; localSet("loc", l); render(); }
 document.getElementById("day").onchange = e => { day = e.target.value; render(); };
