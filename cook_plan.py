@@ -27,7 +27,8 @@ BUFFER = 0.30            # cook 30% above the forecast (tested: best balance of 
 ROUND_TO = 4             # drop in multiples of 4 pieces
 MIN_DROP = 4             # never drop fewer than this in a cook hour
 MIN_EXTRA = 4            # ...but always at least 4 pieces above the forecast (protects slow afternoon hours)
-STOCKOUT_UPLIFT = 1.15   # when an hour sold out, assume real demand was 15% higher
+STOCKOUT_UPLIFT = 1.15   # ASSUMPTION: when the warmer ran empty, plan 15% above what sold there.
+                         # Toast can't see walk-aways; the in-store tally will confirm or change this.
 COST_PER_PIECE = 1.10    # what one raw piece costs (from Dre)
 CURRENT_BATCH = 24       # today's fixed batch, used for the before/after comparison
 BACKTEST_WEEKS = 6       # weeks replayed to test the plan (same 6-week window the forecast uses)
@@ -115,20 +116,20 @@ def by_day(sales):
 
 
 def simulate(hours_sold, plan, cook_hours, backup=0):
-    """Run one day: cook `plan[hour]` at each cook hour, sell, carry leftovers.
-    With backup > 0, the cook drops that many more whenever the warmer runs out
-    during a cook hour. Returns (pieces thrown out at close, pieces short in each
-    hour that ran out)."""
-    on_hand, sold_out = 0, []
-    for h, demand in hours_sold:
+    """Replay one day of real Toast sales: cook `plan[hour]` at each cook hour,
+    sell, carry leftovers. With backup > 0, the cook drops that many more when
+    the warmer would run out during a cook hour.
+    Returns (pieces thrown out at close, hours the warmer ended empty, extra pieces dropped)."""
+    on_hand, empty, extra = 0, 0, 0
+    for h, sold in hours_sold:
         on_hand += plan.get(h, 0) if h in cook_hours else 0
-        if backup and h in cook_hours and demand > on_hand:
+        if backup and h in cook_hours and sold > on_hand:
             on_hand += backup
-        sold = min(on_hand, demand)
-        on_hand -= sold
-        if sold < demand:
-            sold_out.append(demand - sold)
-    return on_hand, sold_out
+            extra += backup
+        on_hand -= min(on_hand, sold)
+        if on_hand == 0 and h in cook_hours:
+            empty += 1
+    return on_hand, empty, extra
 
 
 def estimate_demand(days, cook_hours, used):
@@ -184,43 +185,42 @@ def build_plan(demand, cook_hours, until=None):
     return plan
 
 
-def backtest(demand, cook_hours, lbs_per_piece):
+def backtest(demand, days, cook_hours, lbs_per_piece):
     """Walk forward through the last BACKTEST_WEEKS weeks. Each week is planned
     using only the weeks before it (up to WEEKS_OF_HISTORY), exactly as it would
-    be in real life, then replayed against the fixed 24/hour and the new plan."""
-    last = max(d for d, _ in demand)
-    first = min(d for d, _ in demand)
+    be in real life, then replayed against that week's ACTUAL Toast sales, for
+    the fixed 24/hour and the new plan. No assumption about missed sales is used
+    in the test, so the savings are conservative."""
+    last = max(d for d, _ in days)
+    first = min(d for d, _ in days)
     start = last - timedelta(days=7 * BACKTEST_WEEKS - 1)
-    # need at least 2 earlier weeks to plan the first test week
-    while (start - first).days < 14 and start <= last:
+    while (start - first).days < 14 and start <= last:   # need 2 earlier weeks
         start += timedelta(days=7)
     weeks = ((last - start).days + 1) // 7
     if weeks < 1:
         return {}, start, last, 0
-    keys = ["old_waste", "new_waste", "rule_waste", "old_out", "new_out",
-            "old_short", "new_short", "rule_short", "old_cooked", "new_cooked"]
+    keys = ["old_waste", "new_waste", "rule_waste", "old_empty", "new_empty",
+            "rule_empty", "rule_extra", "old_cooked", "new_cooked"]
     res = defaultdict(lambda: dict.fromkeys(keys, 0))
     flat = {h: CURRENT_BATCH for h in cook_hours}
     for w in range(weeks):
         wk_start = start + timedelta(days=7 * w)
         plan = build_plan(demand, cook_hours, until=wk_start)
-        for (d, loc), hours in demand.items():
+        for (d, loc), hours in days.items():
             if not (wk_start <= d < wk_start + timedelta(days=7)):
                 continue
             p = plan[(loc, d.weekday())]
-            w0, o0 = simulate(hours, flat, cook_hours)
-            w1, o1 = simulate(hours, p, cook_hours)
-            w2, o2 = simulate(hours, p, cook_hours, backup=BACKUP_DROP)
+            w0, e0, _ = simulate(hours, flat, cook_hours)
+            w1, e1, _ = simulate(hours, p, cook_hours)
+            w2, e2, x2 = simulate(hours, p, cook_hours, backup=BACKUP_DROP)
             r = res[loc]
             r["old_waste"] += w0; r["new_waste"] += w1; r["rule_waste"] += w2
-            r["old_out"] += len(o0); r["new_out"] += len(o1)
-            r["old_short"] += sum(o0); r["new_short"] += sum(o1); r["rule_short"] += sum(o2)
+            r["old_empty"] += e0; r["new_empty"] += e1; r["rule_empty"] += e2
+            r["rule_extra"] += x2
             r["old_cooked"] += sum(flat.values()); r["new_cooked"] += sum(p.values())
     for r in res.values():
         for k in list(r):
             r[k] = round(r[k] / weeks, 1)
-        r["old_waste_lbs"] = round(r["old_waste"] * lbs_per_piece)
-        r["new_waste_lbs"] = round(r["new_waste"] * lbs_per_piece)
     return dict(res), start, last, weeks
 
 
@@ -233,7 +233,7 @@ def main():
     used = load_plans_used(folder)
     demand = estimate_demand(days, cook_hours, used)
     plan = build_plan(demand, cook_hours)
-    bt, bt_start, last, bt_weeks = backtest(demand, cook_hours, lbs_per_piece)
+    bt, bt_start, last, bt_weeks = backtest(demand, days, cook_hours, lbs_per_piece)
     locations = sorted({loc for _, loc in days})
 
     data = {
@@ -273,10 +273,11 @@ def main():
         if not r:
             print("  (Not enough history yet to test this store.)\n")
             continue
-        print(f"  Test on last {bt_weeks} weeks, per week: waste {r['old_waste']:.0f} -> "
-              f"{r['new_waste']:.0f} pieces; sold-out hours {r['old_out']:.0f} -> {r['new_out']:.0f}; "
-              f"pieces short {r['old_short']:.0f} -> {r['new_short']:.0f} "
-              f"(with drop-{BACKUP_DROP} rule: {r['rule_short']:.0f} short, waste {r['rule_waste']:.0f}); cooked {r['old_cooked']:.0f} -> {r['new_cooked']:.0f}\n")
+        print(f"  Test on last {bt_weeks} weeks of real sales, per week: waste "
+              f"{r['old_waste']:.0f} -> {r['new_waste']:.0f} pieces "
+              f"({r['rule_waste']:.0f} with drop-{BACKUP_DROP} rule); warmer empty "
+              f"{r['old_empty']:.0f} -> {r['new_empty']:.0f} hours "
+              f"({r['rule_empty']:.0f} with rule); cooked {r['old_cooked']:.0f} -> {r['new_cooked']:.0f}\n")
     print(f"Wrote {out}")
     print(f"Saved this week's plan to {saved}")
 
