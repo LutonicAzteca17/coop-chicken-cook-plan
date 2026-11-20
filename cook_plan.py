@@ -265,6 +265,79 @@ def backtest(demand, days, cook_hours, lbs_per_piece):
     return dict(res), start, last, weeks
 
 
+def drop_label(h):
+    """'12:00' -> '11:48 AM': when that hour's batch goes into the fryer."""
+    m = int(h[:2]) * 60 - FRY_MINUTES
+    hh, mm = divmod(m, 60)
+    return f"{hh % 12 or 12}:{mm:02d} {'PM' if hh >= 12 else 'AM'}"
+
+
+def write_print_sheet(plan, locations, cook_hours, out):
+    """One printable page per store with the week's drops, for kitchens that work
+    off paper. Open print.html?store=fishtown to print just one store."""
+    heads = "".join(f"<th>{DAYS[wd][:3]}</th>" for wd in range(7))
+    pages = []
+    for loc in locations:
+        rows = "".join(
+            f"<tr><td>{drop_label(h)}</td>" + "".join(f"<td>{plan[(loc, wd)][h]}</td>" for wd in range(7)) + "</tr>"
+            for h in cook_hours)
+        total = "".join(f"<td>{sum(plan[(loc, wd)].values())}</td>" for wd in range(7))
+        slug = loc.lower().replace(" ", "-")
+        pages.append(f"""<section class="page" data-store="{slug}">
+  <h1>{loc}: chicken drops</h1>
+  <p class="sub">Find today's column. At each time, drop that many pieces. Each batch is ready {FRY_MINUTES} minutes later, on the hour.</p>
+  <table>
+    <tr><th>Drop at</th>{heads}</tr>
+    {rows}
+    <tr class="tot"><td>Total</td>{total}</tr>
+  </table>
+  <div class="rule">Down to {BACKUP_AT} pieces? <b>Drop {BACKUP_DROP} more now.</b> &nbsp;|&nbsp; Chicken older than {HOLD_MINUTES} minutes: <b>toss it.</b></div>
+  <p class="foot">Same numbers as the screen. The plan updates each Monday, so print a new sheet then.</p>
+</section>""")
+    out.write_text(f"""<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chicken Drop Sheet</title>
+<style>
+  :root {{ --fg:#000; --bg:#fff; --line:#000; --mute:#333; }}
+  @media (prefers-color-scheme: dark) {{ :root:not([data-theme="light"]) {{ --fg:#fff; --bg:#111; --line:#888; --mute:#bbb; }} }}
+  :root[data-theme="dark"] {{ --fg:#fff; --bg:#111; --line:#888; --mute:#bbb; }}
+  body {{ margin:0; padding:16px; font-family: Arial, sans-serif; color:var(--fg); background:var(--bg); }}
+  h1 {{ font-size: 28px; margin: 0 0 6px; }}
+  .sub {{ font-size: 17px; margin: 0 0 12px; color: var(--mute); }}
+  .wrap {{ overflow-x: auto; }}
+  table {{ width:100%; border-collapse: collapse; table-layout: fixed; min-width: 520px; }}
+  th, td {{ border: 2px solid var(--line); height: 44px; font-size: 22px; text-align:center; font-weight: 700; }}
+  th {{ font-size: 18px; }} th small {{ font-weight: 400; font-size: 14px; }}
+  th:first-child, td:first-child {{ width: 110px; font-size: 18px; }}
+  .tot td {{ font-weight: 400; font-size: 16px; }}
+  .rule {{ margin-top: 14px; border: 3px solid var(--line); padding: 10px; font-size: 20px; text-align: center; }}
+  .foot {{ font-size: 14px; color: var(--mute); margin: 8px 0 0; }}
+  .page + .page {{ margin-top: 40px; }}
+  button {{ font-size:18px; padding:10px 16px; margin-bottom:12px; }}
+  @page {{ size: landscape; margin: 12mm; }}
+  @media print {{ body {{ padding: 0; }} button {{ display:none; }}
+    :root {{ --fg:#000; --bg:#fff; --line:#000; --mute:#333; }}
+    th, td {{ height: 36px; }} h1 {{ font-size: 24px; }} .rule {{ margin-top: 10px; padding: 8px; }}
+    .page {{ break-after: page; }} .page:last-child {{ break-after: auto; }} .page + .page {{ margin-top: 0; }} }}
+</style>
+</head>
+<body>
+<button onclick="window.print()">Print this sheet</button>
+<div class="wrap">
+{chr(10).join(pages)}
+</div>
+<script>
+  const s = new URLSearchParams(location.search).get("store");
+  if (s) document.querySelectorAll(".page").forEach(p => {{ if (p.dataset.store !== s) p.remove(); }});
+</script>
+</body>
+</html>
+""")
+
+
 def main():
     folder = sys.argv[1] if len(sys.argv) > 1 else Path(__file__).parent / "data"
     sales, cook_hours, lbs_per_piece = load(folder)
@@ -308,6 +381,9 @@ def main():
     out = Path(__file__).parent / "index.html"
     out.write_text(template.replace("/*DATA*/null", json.dumps(data)))
 
+    sheet = Path(__file__).parent / "print.html"
+    write_print_sheet(plan, locations, cook_hours, sheet)
+
     print(f"Plan for week of {data['week_of']} (data through {last})\n")
     for loc in locations:
         print(loc)
@@ -323,7 +399,7 @@ def main():
               f"({r['rule_waste']:.0f} with backup rule); pieces customers waited for "
               f"{r['old_waited_pcs']:.0f} -> {r['rule_waited_pcs']:.0f} with backup rule "
               f"(total minutes waiting {r['old_wait']:.0f} -> {r['rule_wait']:.0f}); cooked {r['old_cooked']:.0f} -> {r['new_cooked']:.0f}\n")
-    print(f"Wrote {out}")
+    print(f"Wrote {out} and {sheet}")
     print(f"Saved this week's plan to {saved}")
 
 

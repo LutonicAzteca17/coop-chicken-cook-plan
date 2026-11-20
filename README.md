@@ -22,7 +22,12 @@ On the tablet or TV above the fry line, open the link for your store and leave i
 - Fishtown: https://lutonicazteca17.github.io/coop-chicken-cook-plan/?store=fishtown
 - Northern Liberties: https://lutonicazteca17.github.io/coop-chicken-cook-plan/?store=northern-liberties
 
-That's all. The screen follows the clock on the device:
+**Printed sheet (for kitchens that work off paper):** the same numbers for the whole week on one page, with the backup and 90-minute rules. Print a new one each Monday, since the plan updates weekly.
+
+- Fishtown: https://lutonicazteca17.github.io/coop-chicken-cook-plan/print.html?store=fishtown
+- Northern Liberties: https://lutonicazteca17.github.io/coop-chicken-cook-plan/print.html?store=northern-liberties
+
+The screen follows the clock on the device:
 
 - **Before 10:48 AM:** it shows the first drop of the day and when to make it.
 - **At 48 minutes past each hour:** the big yellow number changes to the next drop, so it's ready on the hour. The line under it shows the drop after that.
@@ -39,7 +44,7 @@ Pathway does this each Monday. To do it yourself:
 
 1. Replace `data/toast_hourly_sales.csv` with the new Toast export. It needs these columns: `date, location, hour, fried_chicken_pieces_sold`. Hours can be written as `11:00`, `9:00 PM`, and so on.
 2. Run `python3 cook_plan.py`. It needs only Python 3, with nothing to install. Macs already have it.
-3. Commit and push. The live screen updates within a couple of minutes, and every screen reloads it the next morning.
+3. Commit and push. The live screen and the printed sheet update within a couple of minutes, and every screen reloads it the next morning.
 
 Each run saves the plan it made in `plans/`. The next run uses that file to know what the kitchen actually cooked, so it can tell when an hour sold out. If something is wrong with the export (for example, a missing column), the script stops and says exactly what's wrong.
 

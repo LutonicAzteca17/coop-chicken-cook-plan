@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chicken Drop Sheet</title>
+<style>
+  :root { --fg:#000; --bg:#fff; --line:#000; --mute:#333; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --fg:#fff; --bg:#111; --line:#888; --mute:#bbb; } }
+  :root[data-theme="dark"] { --fg:#fff; --bg:#111; --line:#888; --mute:#bbb; }
+  body { margin:0; padding:16px; font-family: Arial, sans-serif; color:var(--fg); background:var(--bg); }
+  h1 { font-size: 28px; margin: 0 0 6px; }
+  .sub { font-size: 17px; margin: 0 0 12px; color: var(--mute); }
+  .wrap { overflow-x: auto; }
+  table { width:100%; border-collapse: collapse; table-layout: fixed; min-width: 520px; }
+  th, td { border: 2px solid var(--line); height: 44px; font-size: 22px; text-align:center; font-weight: 700; }
+  th { font-size: 18px; } th small { font-weight: 400; font-size: 14px; }
+  th:first-child, td:first-child { width: 110px; font-size: 18px; }
+  .tot td { font-weight: 400; font-size: 16px; }
+  .rule { margin-top: 14px; border: 3px solid var(--line); padding: 10px; font-size: 20px; text-align: center; }
+  .foot { font-size: 14px; color: var(--mute); margin: 8px 0 0; }
+  .page + .page { margin-top: 40px; }
+  button { font-size:18px; padding:10px 16px; margin-bottom:12px; }
+  @page { size: landscape; margin: 12mm; }
+  @media print { body { padding: 0; } button { display:none; }
+    :root { --fg:#000; --bg:#fff; --line:#000; --mute:#333; }
+    th, td { height: 36px; } h1 { font-size: 24px; } .rule { margin-top: 10px; padding: 8px; }
+    .page { break-after: page; } .page:last-child { break-after: auto; } .page + .page { margin-top: 0; } }
+</style>
+</head>
+<body>
+<button onclick="window.print()">Print this sheet</button>
+<div class="wrap">
+<section class="page" data-store="fishtown">
+  <h1>Fishtown: chicken drops</h1>
+  <p class="sub">Find today's column. At each time, drop that many pieces. Each batch is ready 12 minutes later, on the hour.</p>
+  <table>
+    <tr><th>Drop at</th><th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th><th>Fri</th><th>Sat</th><th>Sun</th></tr>
+    <tr><td>10:48 AM</td><td>16</td><td>16</td><td>20</td><td>20</td><td>24</td><td>24</td><td>20</td></tr><tr><td>11:48 AM</td><td>28</td><td>28</td><td>28</td><td>36</td><td>36</td><td>36</td><td>36</td></tr><tr><td>12:48 PM</td><td>24</td><td>28</td><td>28</td><td>28</td><td>28</td><td>28</td><td>28</td></tr><tr><td>1:48 PM</td><td>12</td><td>12</td><td>12</td><td>12</td><td>16</td><td>16</td><td>12</td></tr><tr><td>2:48 PM</td><td>8</td><td>8</td><td>8</td><td>12</td><td>12</td><td>12</td><td>12</td></tr><tr><td>3:48 PM</td><td>12</td><td>12</td><td>12</td><td>12</td><td>12</td><td>12</td><td>12</td></tr><tr><td>4:48 PM</td><td>20</td><td>20</td><td>20</td><td>24</td><td>32</td><td>36</td><td>28</td></tr><tr><td>5:48 PM</td><td>32</td><td>28</td><td>32</td><td>36</td><td>32</td><td>28</td><td>36</td></tr><tr><td>6:48 PM</td><td>24</td><td>24</td><td>28</td><td>24</td><td>24</td><td>24</td><td>24</td></tr><tr><td>7:48 PM</td><td>16</td><td>20</td><td>16</td><td>20</td><td>24</td><td>24</td><td>20</td></tr>
+    <tr class="tot"><td>Total</td><td>192</td><td>196</td><td>204</td><td>224</td><td>240</td><td>240</td><td>228</td></tr>
+  </table>
+  <div class="rule">Down to 6 pieces? <b>Drop 4 more now.</b> &nbsp;|&nbsp; Chicken older than 90 minutes: <b>toss it.</b></div>
+  <p class="foot">Same numbers as the screen. The plan updates each Monday, so print a new sheet then.</p>
+</section>
+<section class="page" data-store="northern-liberties">
+  <h1>Northern Liberties: chicken drops</h1>
+  <p class="sub">Find today's column. At each time, drop that many pieces. Each batch is ready 12 minutes later, on the hour.</p>
+  <table>
+    <tr><th>Drop at</th><th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th><th>Fri</th><th>Sat</th><th>Sun</th></tr>
+    <tr><td>10:48 AM</td><td>16</td><td>16</td><td>16</td><td>16</td><td>20</td><td>24</td><td>16</td></tr><tr><td>11:48 AM</td><td>20</td><td>24</td><td>24</td><td>32</td><td>40</td><td>32</td><td>32</td></tr><tr><td>12:48 PM</td><td>20</td><td>20</td><td>20</td><td>24</td><td>24</td><td>32</td><td>24</td></tr><tr><td>1:48 PM</td><td>8</td><td>8</td><td>12</td><td>12</td><td>16</td><td>12</td><td>12</td></tr><tr><td>2:48 PM</td><td>8</td><td>8</td><td>8</td><td>8</td><td>12</td><td>12</td><td>8</td></tr><tr><td>3:48 PM</td><td>8</td><td>12</td><td>12</td><td>12</td><td>12</td><td>12</td><td>12</td></tr><tr><td>4:48 PM</td><td>16</td><td>16</td><td>16</td><td>16</td><td>24</td><td>28</td><td>20</td></tr><tr><td>5:48 PM</td><td>24</td><td>24</td><td>24</td><td>28</td><td>36</td><td>32</td><td>32</td></tr><tr><td>6:48 PM</td><td>20</td><td>20</td><td>24</td><td>24</td><td>24</td><td>24</td><td>28</td></tr><tr><td>7:48 PM</td><td>16</td><td>16</td><td>16</td><td>16</td><td>20</td><td>24</td><td>16</td></tr>
+    <tr class="tot"><td>Total</td><td>156</td><td>164</td><td>172</td><td>188</td><td>228</td><td>232</td><td>200</td></tr>
+  </table>
+  <div class="rule">Down to 6 pieces? <b>Drop 4 more now.</b> &nbsp;|&nbsp; Chicken older than 90 minutes: <b>toss it.</b></div>
+  <p class="foot">Same numbers as the screen. The plan updates each Monday, so print a new sheet then.</p>
+</section>
+</div>
+<script>
+  const s = new URLSearchParams(location.search).get("store");
+  if (s) document.querySelectorAll(".page").forEach(p => { if (p.dataset.store !== s) p.remove(); });
+</script>
+</body>
+</html>
