@@ -144,8 +144,8 @@ function render() {
     nextEl.textContent = "";
   }
   if (live) nowEl.className = "now";
-  // Backup rule only matters while drops are happening today
-  document.getElementById("rule").style.display = (live && h >= hours[0] && h <= hours[hours.length-1]) ? "" : "none";
+  // Backup rule: always shown so the cook never has to remember it
+  document.getElementById("rule").style.display = "";
 
   // Today table
   const total = hours.reduce((s,x)=>s+plan[x],0);
