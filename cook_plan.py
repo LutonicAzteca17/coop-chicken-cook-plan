@@ -272,10 +272,18 @@ def drop_label(h):
     return f"{hh % 12 or 12}:{mm:02d} {'PM' if hh >= 12 else 'AM'}"
 
 
-def write_print_sheet(plan, locations, cook_hours, out):
+def week_label(week_of):
+    """'2026-10-19' -> 'Oct 19 to Oct 25': the 7 days this plan is for."""
+    start = date.fromisoformat(week_of)
+    return f"{start.strftime('%b %-d')} to {(start + timedelta(days=6)).strftime('%b %-d')}"
+
+
+def write_print_sheet(plan, locations, cook_hours, week_of, out):
     """One printable page per store with the week's drops, for kitchens that work
     off paper. Open print.html?store=fishtown to print just one store."""
-    heads = "".join(f"<th>{DAYS[wd][:3]}</th>" for wd in range(7))
+    start = date.fromisoformat(week_of)
+    heads = "".join(f"<th>{DAYS[wd][:3]}<br><small>{(start + timedelta(days=(wd - start.weekday()) % 7)).strftime('%-m/%-d')}</small></th>"
+                    for wd in range(7))
     pages = []
     for loc in locations:
         rows = "".join(
@@ -284,6 +292,7 @@ def write_print_sheet(plan, locations, cook_hours, out):
         total = "".join(f"<td>{sum(plan[(loc, wd)].values())}</td>" for wd in range(7))
         slug = loc.lower().replace(" ", "-")
         pages.append(f"""<section class="page" data-store="{slug}">
+  <div class="week">WEEK OF {week_label(week_of).upper()}</div>
   <h1>{loc}: chicken drops</h1>
   <p class="sub">Find today's column. At each time, drop that many pieces. Each batch is ready {FRY_MINUTES} minutes later, on the hour.</p>
   <table>
@@ -292,7 +301,7 @@ def write_print_sheet(plan, locations, cook_hours, out):
     <tr class="tot"><td>Total</td>{total}</tr>
   </table>
   <div class="rule">Down to {BACKUP_AT} pieces? <b>Drop {BACKUP_DROP} more now.</b> &nbsp;|&nbsp; Chicken older than {HOLD_MINUTES} minutes: <b>toss it.</b></div>
-  <p class="foot">Same numbers as the screen. The plan updates each Monday, so print a new sheet then.</p>
+  <p class="foot">Same numbers as the screen, which shows the same week. If the week at the top isn't this week, it's an old sheet: print a new one.</p>
 </section>""")
     out.write_text(f"""<!doctype html>
 <html lang="en">
@@ -314,6 +323,7 @@ def write_print_sheet(plan, locations, cook_hours, out):
   th:first-child, td:first-child {{ width: 110px; font-size: 18px; }}
   .tot td {{ font-weight: 400; font-size: 16px; }}
   .rule {{ margin-top: 14px; border: 3px solid var(--line); padding: 10px; font-size: 20px; text-align: center; }}
+  .week {{ display:inline-block; font-size: 22px; font-weight: 700; border: 3px solid var(--line); padding: 4px 10px; margin-bottom: 8px; }}
   .foot {{ font-size: 14px; color: var(--mute); margin: 8px 0 0; }}
   .page + .page {{ margin-top: 40px; }}
   button {{ font-size:18px; padding:10px 16px; margin-bottom:12px; }}
@@ -356,6 +366,7 @@ def main():
         "hours": cook_hours,
         "plan": {loc: {DAYS[wd]: plan[(loc, wd)] for wd in range(7)} for loc in locations},
         "week_of": (last + timedelta(days=1)).isoformat(),
+        "week_label": week_label((last + timedelta(days=1)).isoformat()),
         "data_through": last.isoformat(),
         "backtest": bt,
         "backtest_range": f"{bt_start.isoformat()} to {last.isoformat()}",
@@ -382,7 +393,7 @@ def main():
     out.write_text(template.replace("/*DATA*/null", json.dumps(data)))
 
     sheet = Path(__file__).parent / "print.html"
-    write_print_sheet(plan, locations, cook_hours, sheet)
+    write_print_sheet(plan, locations, cook_hours, data["week_of"], sheet)
 
     print(f"Plan for week of {data['week_of']} (data through {last})\n")
     for loc in locations:

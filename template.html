@@ -73,6 +73,7 @@
 
   <div class="wk">
     <h2 id="wktitle"></h2>
+    <div class="legend" id="wkdates"></div>
     <div class="legend">Times are when to drop. Brighter yellow = busier. Today has a box around it.</div>
     <table id="week" aria-label="Pieces to drop each hour, every day this week"></table>
   </div>
@@ -173,6 +174,7 @@ function render() {
     return `background:rgb(${r},${g},${b});color:${lum > 0.45 ? '#000' : '#fff'}`;
   };
   document.getElementById("wktitle").textContent = "This week at " + loc;
+  document.getElementById("wkdates").textContent = "Plan for " + D.week_label + " (matches the printed sheet)";
   document.getElementById("week").innerHTML =
     "<tr><th></th>" + D.days.map(d => `<th class="${d===dayName?'today':''}">${d.slice(0,3)}</th>`).join("") + "</tr>" +
     hours.map(x => `<tr><td>${pretty(x)}</td>` + D.days.map(d =>
