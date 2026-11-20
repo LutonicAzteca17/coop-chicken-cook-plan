@@ -51,21 +51,23 @@ Each run saves the plan it made in `plans/`. The next run uses that file to know
 
 ## Does it work?
 
-The plan was built only from data through Sep 20, then replayed against the 4 weeks that followed (Sep 21 to Oct 18), carrying leftovers hour to hour the way the kitchen does.
+Everything uses the same 6-week window. The plan forecasts from the last 6 weeks, and it was tested on the last 6 weeks (Sep 7 to Oct 18). Each test week was planned using only the weeks before it, the way it would work in real life. Then each day was replayed hour by hour, carrying leftovers forward like the kitchen does.
 
-| Per week | Fixed 24/hour | This plan |
-|---|---|---|
-| Pieces thrown out, Fishtown | 244 | 62 |
-| Pieces thrown out, Northern Liberties | 421 | 63 |
-| Pieces customers wanted but couldn't get (both stores) | 50 | 18 |
-| ...with the "drop 4 more" backup rule | | 1 |
-| Waste cost at $1.10/piece (both stores) | ~$732 | ~$138 |
+As a check, replaying the old fixed 24/hour gives 665 pieces of waste a week, which matches the real waste log for those 6 weeks exactly.
 
-That's about **$590 a week, or roughly $30K a year**, less chicken in the trash, with fewer lunch-rush sellouts.
+| Per week, average of last 6 weeks | Fixed 24/hour | This plan | This plan + "drop 4 more" |
+|---|---|---|---|
+| Pieces thrown out, Fishtown | 241 | 63 | 66 |
+| Pieces thrown out, Northern Liberties | 424 | 68 | 70 |
+| Pieces thrown out, both stores | 665 | 132 | 135 |
+| Pieces customers wanted but couldn't get | 52 | 21 | 3 |
+| Waste cost at $1.10/piece | ~$732 | ~$145 | ~$149 |
+
+That's about **80% less waste, roughly $585 a week or $30K a year**, and almost no lunch-rush sellouts once the backup rule is used.
 
 ## Why "drop 4 more"
 
-In the 4-week test, 30 of the 32 hours that ran short were short by 4 pieces or fewer (none by more than 5). Replaying those weeks with the rule "if the warmer runs out before the next drop, drop 4 more" cut pieces customers couldn't get from 18 a week to about 1, for only about 4 extra pieces of waste a week. Dropping 8 instead added more waste (about 13 a week) without fixing more shortages.
+When the plan came up short, it was almost always by a few pieces, mostly in the slow 2 to 4 PM hours. Across the same 6 weeks, "drop 4 more" cut pieces customers couldn't get from 21 a week to 3, for about 4 extra pieces of waste. "Drop 8 more" cut it to under 1, but added about 16 pieces of waste a week. Four is the better trade.
 
 ## Assumptions to confirm with the kitchen
 
