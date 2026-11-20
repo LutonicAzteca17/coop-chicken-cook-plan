@@ -23,7 +23,7 @@ from pathlib import Path
 
 # ---- Settings a manager might change -------------------------------------
 WEEKS_OF_HISTORY = 6     # how many recent weeks the forecast averages
-BUFFER = 0.20            # cook 20% above the forecast (tested with the 90-minute hold: best balance of waste vs running out)
+BUFFER = 0.10            # cook 10% above the forecast (tested with 12-min fry time, 90-min hold and the backup rule: least waste for the same wait)
 ROUND_TO = 4             # drop in multiples of 4 pieces
 MIN_DROP = 4             # never drop fewer than this in a cook hour
 MIN_EXTRA = 4            # ...but always at least 4 pieces above the forecast (protects slow afternoon hours)
@@ -33,6 +33,8 @@ COST_PER_PIECE = 1.10    # what one raw piece costs (from Dre)
 CURRENT_BATCH = 24       # today's fixed batch, used for the before/after comparison
 BACKTEST_WEEKS = 6       # weeks replayed to test the plan (same 6-week window the forecast uses)
 HOLD_MINUTES = 90        # Coop's rule: chicken is tossed after 90 minutes under the heat lamp
+FRY_MINUTES = 12         # a batch takes 12 minutes, so each drop starts 12 minutes before its hour
+BACKUP_AT = 6            # "down to 4 pieces? drop 4 more now"
 BACKUP_DROP = 4          # "running out before the next drop? drop 4 more"
 DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 
@@ -116,36 +118,54 @@ def by_day(sales):
     return days
 
 
-def simulate(hours_sold, plan, cook_hours, backup=0, hold=None):
-    """Replay one day of real Toast sales in half-hour steps. Each drop goes in at
-    the top of its hour. Oldest chicken is sold first. With `hold` (minutes), any
-    piece older than that is tossed. With backup > 0, the cook drops that many
-    more whenever the warmer is empty and customers are waiting during a cook hour.
-    Returns (pieces thrown out, hours the warmer ended empty, extra pieces dropped)."""
-    batches, tossed, empty, extra = [], 0, 0, 0     # batches: [minute cooked, pieces]
-    for h, sold in hours_sold:
-        start = int(h[:2]) * 60
-        if h in cook_hours and plan.get(h, 0):
-            batches.append([start, plan[h]])
-        halves = [sold // 2, sold - sold // 2]
-        for i, want in enumerate(halves):
-            now = start + 30 * i
-            if hold:
-                for bt in batches:
-                    if now - bt[0] > hold - 30:      # would pass the limit during this half hour
-                        tossed += bt[1]; bt[1] = 0
-                batches = [bt for bt in batches if bt[1] > 0]
-            if backup and h in cook_hours and want > sum(bt[1] for bt in batches):
-                batches.append([now, backup]); extra += backup
-            while want and batches:
-                take = min(want, batches[0][1])
-                batches[0][1] -= take; want -= take
-                if batches[0][1] == 0:
-                    batches.pop(0)
-        if h in cook_hours and not batches:
-            empty += 1
-    tossed += sum(bt[1] for bt in batches)
-    return tossed, empty, extra
+def simulate(hours_sold, plan, cook_hours, backup=0, hold=None, lead=None, backup_at=None):
+    """Replay one day of real Toast sales minute by minute (each hour's sales spread
+    evenly). Each drop goes into the fryer `lead` minutes before its hour and is ready
+    FRY_MINUTES later. Oldest chicken is sold first, and anything older than `hold`
+    minutes is tossed. With backup > 0: when the warmer is down to `backup_at` pieces
+    (or fewer), nothing is frying and the next drop is more than FRY_MINUTES away,
+    the cook drops `backup` more.
+    Returns (pieces thrown out, minutes customers spent waiting for chicken (one
+    piece waiting one minute = 1), extra pieces dropped, pieces customers had to
+    wait for)."""
+    lead = FRY_MINUTES if lead is None else lead
+    backup_at = BACKUP_AT if backup_at is None else backup_at
+    sales = defaultdict(int)
+    for h, q in hours_sold:
+        base = int(h[:2]) * 60
+        for i in range(q):
+            sales[base + int((i + 0.5) * 60 / q)] += 1
+    starts = {int(h[:2]) * 60 - lead: plan.get(h, 0) for h in cook_hours if plan.get(h, 0)}
+    ready_times = sorted(t + FRY_MINUTES for t in starts)
+    first_open = min(int(h[:2]) * 60 for h in cook_hours)
+    frying, warm, tossed, waited, extra, queue, waited_pcs = [], [], 0, 0, 0, 0, 0
+    end = max(list(sales) + ready_times) + 1
+    for m in range(min(starts) if starts else 0, end + 1):
+        if m in starts:
+            frying.append([m + FRY_MINUTES, starts[m]])
+        for f in [f for f in frying if f[0] == m]:
+            warm.append([m, f[1]]); frying.remove(f)
+        if hold:
+            for w in warm:
+                if m - w[0] >= hold:
+                    tossed += w[1]; w[1] = 0
+            warm = [w for w in warm if w[1] > 0]
+        nxt = [r for r in ready_times if r > m]
+        if (backup and m >= first_open and nxt and not frying
+                and sum(w[1] for w in warm) <= backup_at and nxt[0] - m > FRY_MINUTES):
+            frying.append([m + FRY_MINUTES, backup]); extra += backup
+        # Toast recorded these sales, so customers who find the warmer empty wait
+        # for the next batch rather than leave. They're counted as "had to wait".
+        queue += sales.get(m, 0)
+        while queue and warm:
+            take = min(queue, warm[0][1])
+            warm[0][1] -= take; queue -= take
+            if warm[0][1] == 0:
+                warm.pop(0)
+        waited += queue
+        waited_pcs += min(queue, sales.get(m, 0))   # this minute's customers still unserved
+    tossed += sum(w[1] for w in warm) + sum(f[1] for f in frying)
+    return tossed, waited, extra, waited_pcs
 
 
 def estimate_demand(days, cook_hours, used):
@@ -218,8 +238,8 @@ def backtest(demand, days, cook_hours, lbs_per_piece):
     weeks = ((last - start).days + 1) // 7
     if weeks < 1:
         return {}, start, last, 0
-    keys = ["old_waste", "new_waste", "rule_waste", "old_empty", "new_empty",
-            "rule_empty", "rule_extra", "old_cooked", "new_cooked"]
+    keys = ["old_waste", "new_waste", "rule_waste", "old_wait", "new_wait",
+            "rule_wait", "old_waited_pcs", "new_waited_pcs", "rule_waited_pcs", "rule_extra", "old_cooked", "new_cooked"]
     res = defaultdict(lambda: dict.fromkeys(keys, 0))
     flat = {h: CURRENT_BATCH for h in cook_hours}
     for w in range(weeks):
@@ -229,12 +249,14 @@ def backtest(demand, days, cook_hours, lbs_per_piece):
             if not (wk_start <= d < wk_start + timedelta(days=7)):
                 continue
             p = plan[(loc, d.weekday())]
-            w0, e0, _ = simulate(hours, flat, cook_hours, hold=HOLD_MINUTES)
-            w1, e1, _ = simulate(hours, p, cook_hours, hold=HOLD_MINUTES)
-            w2, e2, x2 = simulate(hours, p, cook_hours, backup=BACKUP_DROP, hold=HOLD_MINUTES)
+            # Today: 24 dropped on the hour, nothing tossed mid-day (this matches the waste log)
+            w0, e0, _, n0 = simulate(hours, flat, cook_hours, lead=0)
+            w1, e1, _, n1 = simulate(hours, p, cook_hours, hold=HOLD_MINUTES)
+            w2, e2, x2, n2 = simulate(hours, p, cook_hours, backup=BACKUP_DROP, hold=HOLD_MINUTES)
             r = res[loc]
             r["old_waste"] += w0; r["new_waste"] += w1; r["rule_waste"] += w2
-            r["old_empty"] += e0; r["new_empty"] += e1; r["rule_empty"] += e2
+            r["old_wait"] += e0; r["new_wait"] += e1; r["rule_wait"] += e2
+            r["old_waited_pcs"] += n0; r["new_waited_pcs"] += n1; r["rule_waited_pcs"] += n2
             r["rule_extra"] += x2
             r["old_cooked"] += sum(flat.values()); r["new_cooked"] += sum(p.values())
     for r in res.values():
@@ -266,6 +288,10 @@ def main():
         "backtest_range": f"{bt_start.isoformat()} to {last.isoformat()}",
         "lbs_per_piece": round(lbs_per_piece, 2),
         "cost_per_piece": COST_PER_PIECE,
+        "fry_minutes": FRY_MINUTES,
+        "backup_at": BACKUP_AT,
+        "backup_drop": BACKUP_DROP,
+        "hold_minutes": HOLD_MINUTES,
     }
     plans_dir = Path(__file__).parent / "plans"
     plans_dir.mkdir(exist_ok=True)
@@ -294,9 +320,9 @@ def main():
             continue
         print(f"  Test on last {bt_weeks} weeks of real sales, per week: waste "
               f"{r['old_waste']:.0f} -> {r['new_waste']:.0f} pieces "
-              f"({r['rule_waste']:.0f} with drop-{BACKUP_DROP} rule); warmer empty "
-              f"{r['old_empty']:.0f} -> {r['new_empty']:.0f} hours "
-              f"({r['rule_empty']:.0f} with rule); cooked {r['old_cooked']:.0f} -> {r['new_cooked']:.0f}\n")
+              f"({r['rule_waste']:.0f} with backup rule); pieces customers waited for "
+              f"{r['old_waited_pcs']:.0f} -> {r['rule_waited_pcs']:.0f} with backup rule "
+              f"(total minutes waiting {r['old_wait']:.0f} -> {r['rule_wait']:.0f}); cooked {r['old_cooked']:.0f} -> {r['new_cooked']:.0f}\n")
     print(f"Wrote {out}")
     print(f"Saved this week's plan to {saved}")
 

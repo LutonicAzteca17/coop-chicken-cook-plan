@@ -39,7 +39,7 @@
   .wk .sw { display:inline-block; width:18px; height:18px; border-radius:4px; vertical-align:middle; }
   .wk table { font-size: 17px; table-layout: fixed; }
   .wk th, .wk td { padding: 8px 2px; text-align: center; border-bottom: 1px solid var(--bg); }
-  .wk th:first-child, .wk td:first-child { text-align: left; padding-left: 6px; width: 64px; color: var(--mute); }
+  .wk th:first-child, .wk td:first-child { text-align: left; padding-left: 4px; width: 78px; color: var(--mute); font-size: 15px; }
   .wk td.c { font-weight: 800; border-radius: 4px; }
   .wk th.today { color: var(--hi); }
   .wk td.today { outline: 2px solid var(--hi); outline-offset: -2px; }
@@ -67,13 +67,13 @@
 
   <div class="now" id="now" role="status" aria-live="polite"></div>
   <div class="next" id="next"></div>
-  <div class="rule" id="rule">Running out before the next drop? <b>Drop 4 more.</b><br>Chicken older than 90 minutes: <b>toss it.</b></div>
+  <div class="rule" id="rule"></div>
 
   <table id="today" aria-label="Drops for the day"></table>
 
   <div class="wk">
     <h2 id="wktitle"></h2>
-    <div class="legend">Brighter yellow = busier hour. Today has a box around it.</div>
+    <div class="legend">Times are when to drop. Brighter yellow = busier. Today has a box around it.</div>
     <table id="week" aria-label="Pieces to drop each hour, every day this week"></table>
   </div>
 
@@ -100,13 +100,18 @@ function matchStore(s){
 function localGet(k){ try { return localStorage.getItem(k); } catch(e){ return null; } }
 function localSet(k,v){ try { localStorage.setItem(k,v); } catch(e){} }
 
+// Each batch takes D.fry_minutes, so the drop for an hour happens that many minutes
+// before the hour (e.g. the 12 PM batch goes in at 11:48). The screen runs that far ahead.
 function nowHour() {
-  const d = new Date();
+  const d = new Date(Date.now() + D.fry_minutes * 60000);
   return String(d.getHours()).padStart(2,"0") + ":00";
 }
-function pretty(h) {
-  let n = parseInt(h); const ap = n >= 12 ? "PM" : "AM"; n = n % 12 || 12; return n + " " + ap;
+function clockLabel(mins) {
+  let hh = Math.floor(mins / 60), mm = mins % 60; const ap = hh >= 12 ? "PM" : "AM"; hh = hh % 12 || 12;
+  return hh + ":" + String(mm).padStart(2, "0") + " " + ap;
 }
+function pretty(h) { return clockLabel(parseInt(h) * 60 - D.fry_minutes); }   // time to drop
+function readyAt(h) { let n = parseInt(h); const ap = n >= 12 ? "PM" : "AM"; n = n % 12 || 12; return n + " " + ap; }
 
 function render() {
   const plan = D.plan[loc][day];
@@ -126,12 +131,12 @@ function render() {
   let curIdx = hours.indexOf(h);
   if (live && curIdx >= 0) {
     nowEl.style.display = "";
-    nowEl.innerHTML = `<div class="lbl">NOW, ${pretty(h)} DROP</div><div class="big">${plan[h]}</div><div class="sub">pieces</div>`;
+    nowEl.innerHTML = `<div class="lbl">DROP NOW</div><div class="big">${plan[h]}</div><div class="sub">pieces, ready by ${readyAt(h)}</div>`;
     const nh = hours[curIdx + 1];
-    nextEl.textContent = nh ? `Next: ${pretty(nh)} drop ${plan[nh]}` : "Last drop of the day. No more after this.";
+    nextEl.textContent = nh ? `Next: drop ${plan[nh]} at ${pretty(nh)}` : "Last drop of the day. No more after this.";
   } else if (live && h < hours[0]) {
     nowEl.style.display = "";
-    nowEl.innerHTML = `<div class="lbl">FIRST DROP AT ${pretty(hours[0])}</div><div class="big">${plan[hours[0]]}</div><div class="sub">pieces</div>`;
+    nowEl.innerHTML = `<div class="lbl">FIRST DROP AT ${pretty(hours[0])}</div><div class="big">${plan[hours[0]]}</div><div class="sub">pieces, ready by ${readyAt(hours[0])}</div>`;
     nextEl.textContent = "";
   } else if (live) {
     nowEl.style.display = "";
@@ -145,12 +150,14 @@ function render() {
   }
   if (live) nowEl.className = "now";
   // Backup rule: always shown so the cook never has to remember it
+  document.getElementById("rule").innerHTML =
+    `Down to ${D.backup_at} pieces? <b>Drop ${D.backup_drop} more now.</b><br>Chicken older than ${D.hold_minutes} minutes: <b>toss it.</b>`;
   document.getElementById("rule").style.display = "";
 
   // Today table
   const total = hours.reduce((s,x)=>s+plan[x],0);
   document.getElementById("today").innerHTML =
-    `<tr><th>${live ? "Today" : day} at ${loc}</th><th style="text-align:right">Pieces</th></tr>` +
+    `<tr><th>Drop at · ${live ? "today" : day}</th><th style="text-align:right">Pieces</th></tr>` +
     hours.map(x => `<tr class="${live && x===h ? 'cur' : (live && x<h ? 'past':'')}"><td>${pretty(x)}</td><td class="n">${plan[x]}</td></tr>`).join("") +
     `<tr><td>Total for the day</td><td class="n">${total}</td></tr>`;
 
