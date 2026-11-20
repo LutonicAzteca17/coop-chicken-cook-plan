@@ -4,9 +4,18 @@ A screen for above the fry line that tells the cook how many pieces of chicken t
 
 **Live screen:** https://lutonicazteca17.github.io/coop-chicken-cook-plan/
 
+## For the kitchen
+
+**What to do:** look at the big yellow number. Drop that many pieces at the top of the hour. That's it.
+
+- The number changes on its own every hour.
+- The line under it tells you the next drop, so you can get ready.
+- If you tap a different day by accident, tap **Back to today**.
+- If you run out, or you're throwing out a lot, tell your manager.
+
 ## Setting up the screen (one time, 2 minutes)
 
-Open the link for your store on the tablet or TV above the fry line, and leave it open:
+On the tablet or TV above the fry line, open the link for your store and leave it open:
 
 - Fishtown: https://lutonicazteca17.github.io/coop-chicken-cook-plan/?store=fishtown
 - Northern Liberties: https://lutonicazteca17.github.io/coop-chicken-cook-plan/?store=northern-liberties
@@ -22,7 +31,7 @@ At the bottom, a color-coded snapshot shows the whole week (brighter yellow = bu
 
 Make sure the device's clock is set to Eastern time. Keep the screen awake: on an iPad, set Settings > Display & Brightness > Auto-Lock to Never.
 
-## Updating the plan each week
+## For Pathway: updating the plan each week
 
 Pathway does this each Monday. To do it yourself:
 

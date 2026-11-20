@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Coop Chicken Cook Plan</title>
 <style>
-  :root { --bg:#111; --fg:#fff; --mute:#9a9a9a; --hi:#ffcc00; --card:#1e1e1e; --line:#333; --good:#5ad17a; }
+  :root { --bg:#111; --fg:#fff; --mute:#c4c4c4; --hi:#ffcc00; --card:#1e1e1e; --line:#333; --good:#5ad17a; }
   * { box-sizing: border-box; }
   body { margin:0; background:var(--bg); color:var(--fg); font-family: -apple-system, system-ui, Arial, sans-serif; }
   main { max-width: 900px; margin: 0 auto; padding: 16px; }
@@ -44,6 +44,12 @@
   .wk th.today { color: var(--hi); }
   .wk td.today { outline: 2px solid var(--hi); outline-offset: -2px; }
   .wk tr.tot td { color: var(--fg); font-weight: 700; border-top: 2px solid var(--line); }
+  .clock { font-size: 20px; color: var(--fg); }
+  .back { flex: 0 0 auto; font-size: 18px; padding: 10px 14px; background: var(--hi); color: #000; border-color: var(--hi); font-weight: 700; }
+  .ahead { background: #2a2a2a; color: var(--fg); border: 2px dashed var(--hi); }
+  button:focus-visible, select:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+  .wk .legend { font-size: 18px; color: var(--fg); }
+  .wk table { font-size: 19px; }
   @media print { body { background:#fff; color:#000; } .now, button, select { display:none; } }
 </style>
 </head>
@@ -51,21 +57,21 @@
 <main>
   <div class="row" id="locs"></div>
   <div class="row" style="margin-top:8px; align-items:center; gap:12px;">
-    <select id="day"></select>
-    <span class="small" id="clock"></span>
+    <label for="day" class="small">Day:</label>
+    <select id="day" aria-label="Pick a day"></select>
+    <span class="clock" id="clock"></span>
+    <button id="back" class="back" onclick="backToToday()">Back to today</button>
   </div>
 
-  <div class="now" id="now"></div>
+  <div class="now" id="now" role="status" aria-live="polite"></div>
   <div class="next" id="next"></div>
 
-  <table id="today"></table>
+  <table id="today" aria-label="Drops for the day"></table>
 
   <div class="wk">
     <h2 id="wktitle"></h2>
-    <div class="legend"><span class="sw" style="background:#3a3320"></span> slow
-      <span class="sw" style="background:#8a7414"></span>
-      <span class="sw" style="background:#ffcc00"></span> busy &nbsp;·&nbsp; outlined = today</div>
-    <table id="week"></table>
+    <div class="legend">Brighter yellow = busier hour. Today has a box around it.</div>
+    <table id="week" aria-label="Pieces to drop each hour, every day this week"></table>
   </div>
 
 </main>
@@ -106,10 +112,11 @@ function render() {
   const h = nowHour();
 
   document.getElementById("locs").innerHTML = D.locations.map(l =>
-    `<button class="${l===loc?'on':''}" onclick="setLoc('${l}')">${l}</button>`).join("");
+    `<button class="${l===loc?'on':''}" aria-pressed="${l===loc}" onclick="setLoc('${l}')">${l}</button>`).join("");
   document.getElementById("day").innerHTML = D.days.map(d =>
     `<option ${d===day?'selected':''}>${d}</option>`).join("");
-  document.getElementById("clock").textContent = live ? "Today, " + new Date().toLocaleTimeString([], {hour:"numeric", minute:"2-digit"}) : "Planning view";
+  document.getElementById("clock").textContent = live ? "Now: " + new Date().toLocaleTimeString([], {hour:"numeric", minute:"2-digit"}) : "";
+  document.getElementById("back").style.display = live ? "none" : "";
 
   // NOW card
   const nowEl = document.getElementById("now"), nextEl = document.getElementById("next");
@@ -125,18 +132,22 @@ function render() {
     nextEl.textContent = "";
   } else if (live) {
     nowEl.style.display = "";
-    nowEl.innerHTML = `<div class="lbl">DONE FOR TODAY</div><div class="big">0</div><div class="sub">No more drops. Log what's left in the waste log.</div>`;
+    nowEl.innerHTML = `<div class="lbl">DONE FOR TODAY</div><div class="big">0</div><div class="sub">No more drops today. Write down what's left in the waste log.</div>`;
     nextEl.textContent = "";
   } else {
-    nowEl.style.display = "none"; nextEl.textContent = "";
+    nowEl.style.display = "";
+    nowEl.className = "now ahead";
+    nowEl.innerHTML = `<div class="lbl">Looking ahead at ${day}</div><div class="sub">This is not today. Tap "Back to today" to see what to drop now.</div>`;
+    nextEl.textContent = "";
   }
+  if (live) nowEl.className = "now";
 
   // Today table
   const total = hours.reduce((s,x)=>s+plan[x],0);
   document.getElementById("today").innerHTML =
-    `<tr><th>${day} at ${loc}</th><th style="text-align:right">Drop</th></tr>` +
+    `<tr><th>${live ? "Today" : day} at ${loc}</th><th style="text-align:right">Pieces</th></tr>` +
     hours.map(x => `<tr class="${live && x===h ? 'cur' : (live && x<h ? 'past':'')}"><td>${pretty(x)}</td><td class="n">${plan[x]}</td></tr>`).join("") +
-    `<tr><td>Total today <span class="was">(was ${hours.length * 24})</span></td><td class="n">${total}</td></tr>`;
+    `<tr><td>Total for the day</td><td class="n">${total}</td></tr>`;
 
   // Week snapshot: one color per busyness level, today outlined
   const all = D.days.flatMap(d => hours.map(x => D.plan[loc][d][x]));
@@ -144,7 +155,10 @@ function render() {
   const shade = n => {
     const f = (n - lo) / ((hi - lo) || 1);
     const mix = (a, b) => Math.round(a + (b - a) * f);
-    return `background:rgb(${mix(58,255)},${mix(51,204)},${mix(32,0)});color:${f > 0.65 ? '#000' : '#fff'}`;
+    const r = mix(70,255), g = mix(60,204), b = mix(25,0);
+    // pick black or white text, whichever reads better on this shade
+    const lum = (0.2126*r + 0.7152*g + 0.0722*b) / 255;
+    return `background:rgb(${r},${g},${b});color:${lum > 0.45 ? '#000' : '#fff'}`;
   };
   document.getElementById("wktitle").textContent = "This week at " + loc;
   document.getElementById("week").innerHTML =
@@ -153,6 +167,7 @@ function render() {
       `<td class="c ${d===dayName?'today':''}" style="${shade(D.plan[loc][d][x])}">${D.plan[loc][d][x]}</td>`).join("") + "</tr>").join("") +
     `<tr class="tot"><td>Total</td>` + D.days.map(d => `<td>${hours.reduce((s,x)=>s+D.plan[loc][d][x],0)}</td>`).join("") + "</tr>";
 }
+function backToToday(){ followToday = true; day = todayName(); render(); }
 function setLoc(l){ loc = l; localSet("loc", l); render(); }
 document.getElementById("day").onchange = e => {
   day = e.target.value; followToday = (day === todayName()); render();
