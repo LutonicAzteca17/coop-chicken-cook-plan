@@ -67,7 +67,7 @@ That's about **80% less waste, roughly $585 a week or $30K a year**, and almost 
 
 ## Why "drop 4 more"
 
-When the plan came up short, it was almost always by a few pieces, mostly in the slow 2 to 4 PM hours. Across the same 6 weeks, "drop 4 more" cut pieces customers couldn't get from 21 a week to 3, for about 4 extra pieces of waste. "Drop 8 more" cut it to under 1, but added about 16 pieces of waste a week. Four is the better trade.
+When the plan came up short, it was by 4 pieces or fewer about 85% of the time (41 of 48 short hours; never more than 7), mostly in the slow 2 to 4 PM hours. Across the same 6 weeks, "drop 4 more" cut pieces customers couldn't get from 21 a week to 3, for about 4 extra pieces of waste. "Drop 8 more" cut it to under 1, but added about 16 pieces of waste a week. Four is the better trade.
 
 ## Assumptions to confirm with the kitchen
 
