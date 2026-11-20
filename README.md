@@ -11,7 +11,8 @@ A screen for above the fry line that tells the cook how many pieces of chicken t
 - The number changes on its own every hour.
 - The line under it tells you the next drop, so you can get ready.
 - If you tap a different day by accident, tap **Back to today**.
-- If you run out, or you're throwing out a lot, tell your manager.
+- **Running out before the next drop? Drop 8 more.** (This is on the screen too.)
+- If you keep running out, or you're throwing out a lot, tell your manager.
 
 ## Setting up the screen (one time, 2 minutes)
 
