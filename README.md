@@ -32,7 +32,8 @@ The screen follows the clock on the device:
 - **Before 10:48 AM:** it shows the first drop of the day and when to make it.
 - **At 48 minutes past each hour:** the big yellow number changes to the next drop, so it's ready on the hour. The line under it shows the drop after that.
 - **After the last drop:** it says "Done for today."
-- **At midnight:** it switches to the next day. Each morning it reloads itself, so it picks up the newest weekly plan.
+- **At midnight:** it switches to the next day.
+- **New weekly plan:** every screen checks for it every 10 minutes and updates on its own. Nobody needs to reload anything. Only the printed sheet needs reprinting.
 
 At the bottom, a color-coded snapshot shows the whole week, by drop time (brighter yellow = busier hour). Today's column is outlined.
 
@@ -44,7 +45,7 @@ Pathway does this each Monday. To do it yourself:
 
 1. Replace `data/toast_hourly_sales.csv` with the new Toast export. It needs these columns: `date, location, hour, fried_chicken_pieces_sold`. Hours can be written as `11:00`, `9:00 PM`, and so on.
 2. Run `python3 cook_plan.py`. It needs only Python 3, with nothing to install. Macs already have it.
-3. Commit and push. The live screen and the printed sheet update within a couple of minutes, and every screen reloads it the next morning.
+3. Commit and push. The live site updates within a couple of minutes, and every open screen switches to the new plan within 10 minutes after that. Reprint the paper sheets.
 
 Each run saves the plan it made in `plans/`. The next run uses that file to know what the kitchen actually cooked, so it can tell when an hour sold out. If something is wrong with the export (for example, a missing column), the script stops and says exactly what's wrong.
 

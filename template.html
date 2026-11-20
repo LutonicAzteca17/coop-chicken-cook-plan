@@ -193,6 +193,22 @@ function tick(){
 }
 render();
 setInterval(tick, 30000);
+
+// Every 10 minutes, check whether a new weekly plan was published. If the plan on the
+// site is different from the one on screen, reload so nobody has to touch the device.
+const shownPlan = JSON.stringify([D.week_of, D.plan]);
+async function checkForNewPlan(){
+  try {
+    const r = await fetch(location.pathname + "?check=" + Date.now(), { cache: "no-store" });
+    if (!r.ok) return;
+    const t = await r.text();
+    const m = t.match(/const D = (\{.*?\});\s*\n/s);
+    if (!m) return;
+    const fresh = JSON.parse(m[1]);
+    if (fresh && fresh.plan && JSON.stringify([fresh.week_of, fresh.plan]) !== shownPlan) location.reload();
+  } catch (e) { /* offline or busy: keep showing the current plan and try again later */ }
+}
+setInterval(checkForNewPlan, 10 * 60 * 1000);
 </script>
 </body>
 </html>
