@@ -81,6 +81,22 @@
 </main>
 
 <script>
+// Demo only: ?demo=fri-11:48 shows the screen as if it were that day and time
+// (used for the walkthrough video). Without it, the screen uses the real clock.
+(function(){
+  const m = /^(mon|tue|wed|thu|fri|sat|sun)-(\d{1,2}):(\d{2})$/i.exec(new URLSearchParams(location.search).get("demo") || "");
+  if (!m) return;
+  const RealDate = Date, target = new RealDate();
+  const want = ["sun","mon","tue","wed","thu","fri","sat"].indexOf(m[1].toLowerCase());
+  target.setDate(target.getDate() + ((want - target.getDay() + 7) % 7));
+  target.setHours(+m[2], +m[3], 0, 0);
+  const offset = target - RealDate.now();
+  class DemoDate extends RealDate {
+    constructor(...a){ if (a.length) super(...a); else super(RealDate.now() + offset); }
+    static now(){ return RealDate.now() + offset; }
+  }
+  window.Date = DemoDate;
+})();
 const D = /*DATA*/null;
 // Which day it is right now (recomputed every render, so it rolls over at midnight)
 let dayName = todayName();

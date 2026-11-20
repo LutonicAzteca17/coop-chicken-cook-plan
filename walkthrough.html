@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cook Plan Walkthrough</title>
+<style>
+  :root { --bg:#111; --fg:#fff; --mute:#b8b8b8; --hi:#ffcc00; --card:#1c1c1c; --line:#333; --good:#5ad17a; --bad:#ff7a6b; }
+  * { box-sizing: border-box; }
+  html, body { margin:0; height:100%; background:var(--bg); color:var(--fg);
+    font-family: -apple-system, system-ui, "Segoe UI", Arial, sans-serif; overflow:hidden; }
+  .slide { position:absolute; inset:0; padding: 5vh 6vw 9vh; display:none; flex-direction:column; }
+  .slide.on { display:flex; }
+  .kicker { color:var(--hi); font-weight:700; letter-spacing:.08em; text-transform:uppercase; font-size: clamp(13px,1.4vw,18px); }
+  h1 { font-size: clamp(30px,4.4vw,64px); line-height:1.08; margin:.25em 0 .3em; font-weight:800; }
+  h2 { font-size: clamp(24px,3vw,44px); margin:.2em 0 .6em; font-weight:800; }
+  p.lead { font-size: clamp(17px,1.9vw,28px); color:var(--mute); margin:0; max-width: 60ch; }
+  .row { display:flex; gap: 3vw; flex:1; min-height:0; align-items:stretch; }
+  .col { flex:1; min-width:0; display:flex; flex-direction:column; justify-content:center; }
+  .stats { display:grid; grid-template-columns: 1fr; gap: 1.6vh; }
+  .stat { background:var(--card); border:1px solid var(--line); border-radius:14px; padding: 1.6vh 1.4vw; }
+  .stat b { display:block; white-space:nowrap; font-size: clamp(22px,2.6vw,42px); color:var(--hi); line-height:1.05; }
+  .stat span { font-size: clamp(14px,1.4vw,21px); color:var(--mute); }
+  .phone { flex: 0 0 auto; width: min(400px, 30vw); height: 100%; border: 10px solid #2a2a2a; border-radius: 28px; overflow:hidden; background:#111; }
+  .phone iframe { width:100%; height:100%; border:0; display:block; }
+  .paper { flex: 1; border-radius: 10px; overflow:hidden; background:#fff; }
+  .paper iframe { width:100%; height:100%; border:0; }
+  ul.big { margin:0; padding-left: 1.1em; font-size: clamp(17px,1.9vw,28px); line-height:1.45; }
+  ul.big li { margin: .25em 0; }
+  ul.big b { color: var(--hi); }
+  ol.steps { margin:0; padding:0; list-style:none; display:grid; gap: 1.4vh; counter-reset: s; }
+  ol.steps li { counter-increment: s; display:flex; gap: 1vw; align-items:baseline; font-size: clamp(17px,1.9vw,28px);
+    background:var(--card); border:1px solid var(--line); border-radius:12px; padding: 1.3vh 1.2vw; }
+  ol.steps li::before { content: counter(s); flex:0 0 auto; width: 1.6em; height:1.6em; border-radius:50%; background:var(--hi);
+    color:#000; font-weight:800; display:inline-flex; align-items:center; justify-content:center; font-size:.85em; }
+  ol.steps small { display:block; color:var(--mute); font-size:.75em; }
+  table.cmp { border-collapse:collapse; width:100%; font-size: clamp(16px,1.8vw,27px); }
+  table.cmp th, table.cmp td { padding: 1.2vh 1vw; border-bottom:1px solid var(--line); text-align:left; }
+  table.cmp th { color:var(--mute); font-weight:600; font-size:.8em; }
+  table.cmp td.n { text-align:right; font-weight:800; white-space:nowrap; }
+  table.cmp td.new { color: var(--good); }
+  .rule { margin-top: 2vh; border: 3px solid var(--hi); border-radius: 14px; padding: 1.4vh 1.4vw; font-size: clamp(17px,1.9vw,28px); }
+  .rule b { color: var(--hi); }
+  .big-number { font-size: clamp(56px,9vw,140px); font-weight:900; color:var(--hi); line-height:1; }
+  .note { color:var(--mute); font-size: clamp(13px,1.3vw,19px); margin-top: 1.4vh; }
+  svg text { font-family: inherit; }
+  .chart { flex:1; min-height:0; }
+  .nav { position:fixed; right: 1.6vw; bottom: 1.6vh; display:flex; gap:8px; align-items:center; color:#555; font-size:13px; }
+  .nav button { background:transparent; border:1px solid #333; color:#777; border-radius:8px; padding:6px 12px; font-size:14px; cursor:pointer; }
+  .nav button:hover { color:#ccc; border-color:#666; }
+  .dots { position:fixed; left: 6vw; bottom: 2.4vh; display:flex; gap:6px; }
+  .dots i { width:8px; height:8px; border-radius:50%; background:#333; }
+  .dots i.on { background: var(--hi); }
+  @media (max-width: 760px) {
+    html, body { overflow:auto; }
+    .slide { position:static; display:none; padding: 24px 16px 70px; min-height:100vh; }
+    .row { flex-direction:column; }
+    .phone { width:100%; height: 80vh; }
+    .paper { min-height: 70vh; }
+  }
+</style>
+</head>
+<body>
+
+<!-- 1. Title -->
+<section class="slide">
+  <div class="col">
+    <div class="kicker">Coop Chicken · Fishtown &amp; Northern Liberties</div>
+    <h1>A cook plan that follows<br>what each hour actually sells</h1>
+    <p class="lead">Built from 8 weeks of your Toast sales and waste logs.</p>
+  </div>
+</section>
+
+<!-- 2. The problem -->
+<section class="slide">
+  <div class="kicker">The problem, in your numbers</div>
+  <h2>24 pieces every hour. Customers don't buy that way.</h2>
+  <div class="row">
+    <div class="col chart"><svg id="chart" viewBox="0 0 760 420" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Average pieces sold per hour versus 24 cooked"></svg></div>
+    <div class="col" style="flex:0 0 32%">
+      <div class="stats">
+        <div class="stat"><b>~665 pieces</b><span>thrown out a week (last 6 weeks)</span></div>
+        <div class="stat"><b>~$730 a week</b><span>about $38,000 a year, at $1.10 a piece</span></div>
+        <div class="stat"><b>~11 hours a week</b><span>warmer ran empty, mostly noon and 1 PM, Thu to Sun</span></div>
+        <div class="stat"><b>424 vs 241</b><span>pieces a week tossed at Northern Liberties vs Fishtown</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 3. Live screen: Fishtown Friday -->
+<section class="slide">
+  <div class="row">
+    <div class="phone"><iframe data-src="index.html?store=fishtown&amp;demo=fri-11:48" title="Fishtown screen, Friday 11:48 AM"></iframe></div>
+    <div class="col">
+      <div class="kicker">How Keisha uses it</div>
+      <h2>One screen above the fry line</h2>
+      <ul class="big">
+        <li>Big yellow number: <b>what to drop right now</b></li>
+        <li>A batch takes 12 minutes, so it switches <b>12 minutes before each hour</b></li>
+        <li>Under it: the next drop and when</li>
+        <li>Backup rule always on screen</li>
+        <li>Updates itself. Nothing to calculate or type.</li>
+      </ul>
+      <p class="note">Shown: Fishtown, Friday at 11:48 AM.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 4. Live screen: NL Tuesday -->
+<section class="slide">
+  <div class="row">
+    <div class="phone"><iframe data-src="index.html?store=northern-liberties&amp;demo=tue-11:48" title="Northern Liberties screen, Tuesday 11:48 AM"></iframe></div>
+    <div class="col">
+      <div class="kicker">Every store, every day</div>
+      <h2>Each store and weekday gets its own plan</h2>
+      <ul class="big">
+        <li>A Tuesday at Northern Liberties needs far less than a Friday at Fishtown</li>
+        <li>Rest of today below, by drop time. Past drops grayed out.</li>
+        <li>Week at a glance at the bottom: brighter = busier</li>
+      </ul>
+      <p class="note">Shown: Northern Liberties, Tuesday at 11:48 AM.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 5. Printed sheet -->
+<section class="slide">
+  <div class="kicker">For the fry station</div>
+  <h2>The same plan on one printed page</h2>
+  <div class="paper"><iframe data-src="print.html?store=northern-liberties" title="Printed drop sheet, Northern Liberties"></iframe></div>
+</section>
+
+<!-- 6. Where the numbers come from -->
+<section class="slide">
+  <div class="kicker">Where the numbers come from</div>
+  <h2>Four steps, every store, every hour, every weekday</h2>
+  <ol class="steps">
+    <li><div>What that hour sold on that weekday, last 6 weeks<small>Straight from your Toast export</small></div></li>
+    <li><div>Add a 10% cushion, never less than 4 extra pieces</div></li>
+    <li><div>Subtract chicken still usable from the last drop<small>Respecting your 90-minute heat-lamp rule</small></div></li>
+    <li><div>In hours that sold out, cook 15% more than what sold<small>Toast can't see customers who left. We'll check this with a tally in the test week.</small></div></li>
+  </ol>
+  <p class="note">Every Monday, the new Toast export goes in and the plan updates itself.</p>
+</section>
+
+<!-- 7. Does it work -->
+<section class="slide">
+  <div class="kicker">Tested on your real sales</div>
+  <h2>Replayed the last 6 weeks, minute by minute</h2>
+  <div class="row">
+    <div class="col" style="flex:1.3">
+      <table class="cmp">
+        <tr><th>Per week, both stores</th><th style="text-align:right">Today</th><th style="text-align:right">New plan</th></tr>
+        <tr><td>Pieces thrown out</td><td class="n">665</td><td class="n new">268</td></tr>
+        <tr><td>Pieces customers waited for</td><td class="n">84</td><td class="n new">29</td></tr>
+        <tr><td>Chicken served past 90 minutes</td><td class="n">~1 in 3</td><td class="n new">none</td></tr>
+      </table>
+      <div class="rule">Down to 6 pieces? <b>Drop 4 more now.</b> A batch takes 12 minutes, so the backup starts before the warmer is empty.</div>
+      <p class="note">Each week was planned only from the weeks before it. No assumptions about missed sales in the test.</p>
+    </div>
+    <div class="col" style="flex:0 0 30%; align-items:center; text-align:center">
+      <div class="big-number">60%</div>
+      <p class="lead" style="text-align:center">less chicken thrown out</p>
+    </div>
+  </div>
+</section>
+
+<!-- 8. Recommendation -->
+<section class="slide">
+  <div class="kicker">My recommendation</div>
+  <h2>Pilot at Northern Liberties on Monday</h2>
+  <div class="row">
+    <div class="col" style="flex:1.3">
+      <ol class="steps">
+        <li><div>Northern Liberties starts Monday<small>It has the most waste</small></div></li>
+        <li><div>Fishtown stays on 24 an hour for one week<small>A side-by-side comparison</small></div></li>
+        <li><div>Keisha logs waste at close, as she does now</div></li>
+        <li><div>Waste falls and lunch doesn't run out? Fishtown the week after.</div></li>
+      </ol>
+    </div>
+    <div class="col" style="flex:0 0 32%">
+      <div class="stats">
+        <div class="stat"><b>~$437 a week</b><span>in chicken you stop throwing away</span></div>
+        <div class="stat"><b>~$23K a year</b><span>at full rollout, both stores</span></div>
+        <div class="stat"><b>29 vs 84</b><span>pieces customers wait for each week</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="dots" id="dots" aria-hidden="true"></div>
+<div class="nav"><button id="prev" aria-label="Previous slide">←</button><span id="count"></span><button id="next" aria-label="Next slide">→</button></div>
+
+<script>
+// Average pieces sold per hour, last 6 weeks (Sep 7 to Oct 18), average of the two stores.
+const SOLD = [["11 AM",13.1],["12 PM",28.6],["1 PM",23.5],["2 PM",11.8],["3 PM",8.7],["4 PM",10.0],
+              ["5 PM",23.3],["6 PM",30.6],["7 PM",23.8],["8 PM",15.8]];
+function drawChart(){
+  const svg = document.getElementById("chart"), W = 760, H = 420, L = 44, B = 40, T = 34, max = 36;
+  const bw = (W - L - 10) / SOLD.length, y = v => T + (H - T - B) * (1 - v / max);
+  let s = "";
+  [0, 12, 24, 36].forEach(v => s += `<line x1="${L}" x2="${W-6}" y1="${y(v)}" y2="${y(v)}" stroke="#2a2a2a"/><text x="${L-8}" y="${y(v)+5}" fill="#888" font-size="14" text-anchor="end">${v}</text>`);
+  SOLD.forEach(([h, v], i) => {
+    const x = L + i * bw + bw * 0.16, w = bw * 0.68, over = v > 24;
+    s += `<rect x="${x}" y="${y(v)}" width="${w}" height="${y(0)-y(v)}" rx="4" fill="${over ? "#ffcc00" : "#6b6b6b"}"/>`;
+    s += `<text x="${x + w/2}" y="${y(v) - 7}" fill="#ddd" font-size="15" text-anchor="middle" font-weight="700">${Math.round(v)}</text>`;
+    s += `<text x="${x + w/2}" y="${H - 14}" fill="#aaa" font-size="14" text-anchor="middle">${h}</text>`;
+  });
+  s += `<line x1="${L}" x2="${W-6}" y1="${y(24)}" y2="${y(24)}" stroke="#ff7a6b" stroke-width="3" stroke-dasharray="8 6"/>`;
+  s += `<text x="${L}" y="${T-4}" fill="#aaa" font-size="14">Pieces sold per hour (average day, per store)</text>`;
+  s += `<line x1="${W-250}" x2="${W-214}" y1="${T-9}" y2="${T-9}" stroke="#ff7a6b" stroke-width="3" stroke-dasharray="8 6"/>`;
+  s += `<text x="${W-206}" y="${T-4}" fill="#ff7a6b" font-size="15" font-weight="700">24 cooked every hour today</text>`;
+  svg.innerHTML = s;
+}
+drawChart();
+
+const slides = [...document.querySelectorAll(".slide")];
+const dots = document.getElementById("dots");
+slides.forEach(() => dots.appendChild(document.createElement("i")));
+let i = 0;
+try { i = Math.min(slides.length - 1, Math.max(0, parseInt(location.hash.slice(1)) - 1 || 0)); } catch (e) {}
+function show(n){
+  i = Math.max(0, Math.min(slides.length - 1, n));
+  slides.forEach((s, k) => s.classList.toggle("on", k === i));
+  [...dots.children].forEach((d, k) => d.classList.toggle("on", k === i));
+  document.getElementById("count").textContent = (i + 1) + " / " + slides.length;
+  // Load embedded screens fresh each time a slide opens, so the demo clock starts at 11:48.
+  slides[i].querySelectorAll("iframe[data-src]").forEach(f => { f.src = f.dataset.src; });
+  history.replaceState(null, "", "#" + (i + 1));
+}
+document.addEventListener("keydown", e => {
+  if (["ArrowRight", "PageDown", " "].includes(e.key)) { e.preventDefault(); show(i + 1); }
+  if (["ArrowLeft", "PageUp"].includes(e.key)) { e.preventDefault(); show(i - 1); }
+});
+// Arrow keys keep working after clicking or scrolling inside an embedded screen.
+document.querySelectorAll("iframe").forEach(f => f.addEventListener("load", () => {
+  try { f.contentWindow.document.addEventListener("keydown", e => {
+    if (["ArrowRight", "ArrowLeft", "PageDown", "PageUp"].includes(e.key)) { e.preventDefault(); show(i + (e.key === "ArrowRight" || e.key === "PageDown" ? 1 : -1)); }
+  }); } catch (e) {}
+}));
+document.getElementById("next").onclick = () => show(i + 1);
+document.getElementById("prev").onclick = () => show(i - 1);
+show(i);
+</script>
+</body>
+</html>

@@ -81,6 +81,22 @@
 </main>
 
 <script>
+// Demo only: ?demo=fri-11:48 shows the screen as if it were that day and time
+// (used for the walkthrough video). Without it, the screen uses the real clock.
+(function(){
+  const m = /^(mon|tue|wed|thu|fri|sat|sun)-(\d{1,2}):(\d{2})$/i.exec(new URLSearchParams(location.search).get("demo") || "");
+  if (!m) return;
+  const RealDate = Date, target = new RealDate();
+  const want = ["sun","mon","tue","wed","thu","fri","sat"].indexOf(m[1].toLowerCase());
+  target.setDate(target.getDate() + ((want - target.getDay() + 7) % 7));
+  target.setHours(+m[2], +m[3], 0, 0);
+  const offset = target - RealDate.now();
+  class DemoDate extends RealDate {
+    constructor(...a){ if (a.length) super(...a); else super(RealDate.now() + offset); }
+    static now(){ return RealDate.now() + offset; }
+  }
+  window.Date = DemoDate;
+})();
 const D = {"locations": ["Fishtown", "Northern Liberties"], "days": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"], "hours": ["11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00", "20:00"], "plan": {"Fishtown": {"Monday": {"11:00": 16, "12:00": 28, "13:00": 24, "14:00": 12, "15:00": 8, "16:00": 12, "17:00": 20, "18:00": 32, "19:00": 24, "20:00": 16}, "Tuesday": {"11:00": 16, "12:00": 28, "13:00": 28, "14:00": 12, "15:00": 8, "16:00": 12, "17:00": 20, "18:00": 28, "19:00": 24, "20:00": 20}, "Wednesday": {"11:00": 20, "12:00": 28, "13:00": 28, "14:00": 12, "15:00": 8, "16:00": 12, "17:00": 20, "18:00": 32, "19:00": 28, "20:00": 16}, "Thursday": {"11:00": 20, "12:00": 36, "13:00": 28, "14:00": 12, "15:00": 12, "16:00": 12, "17:00": 24, "18:00": 36, "19:00": 24, "20:00": 20}, "Friday": {"11:00": 24, "12:00": 36, "13:00": 28, "14:00": 16, "15:00": 12, "16:00": 12, "17:00": 32, "18:00": 32, "19:00": 24, "20:00": 24}, "Saturday": {"11:00": 24, "12:00": 36, "13:00": 28, "14:00": 16, "15:00": 12, "16:00": 12, "17:00": 36, "18:00": 28, "19:00": 24, "20:00": 24}, "Sunday": {"11:00": 20, "12:00": 36, "13:00": 28, "14:00": 12, "15:00": 12, "16:00": 12, "17:00": 28, "18:00": 36, "19:00": 24, "20:00": 20}}, "Northern Liberties": {"Monday": {"11:00": 16, "12:00": 20, "13:00": 20, "14:00": 8, "15:00": 8, "16:00": 8, "17:00": 16, "18:00": 24, "19:00": 20, "20:00": 16}, "Tuesday": {"11:00": 16, "12:00": 24, "13:00": 20, "14:00": 8, "15:00": 8, "16:00": 12, "17:00": 16, "18:00": 24, "19:00": 20, "20:00": 16}, "Wednesday": {"11:00": 16, "12:00": 24, "13:00": 20, "14:00": 12, "15:00": 8, "16:00": 12, "17:00": 16, "18:00": 24, "19:00": 24, "20:00": 16}, "Thursday": {"11:00": 16, "12:00": 32, "13:00": 24, "14:00": 12, "15:00": 8, "16:00": 12, "17:00": 16, "18:00": 28, "19:00": 24, "20:00": 16}, "Friday": {"11:00": 20, "12:00": 40, "13:00": 24, "14:00": 16, "15:00": 12, "16:00": 12, "17:00": 24, "18:00": 36, "19:00": 24, "20:00": 20}, "Saturday": {"11:00": 24, "12:00": 32, "13:00": 32, "14:00": 12, "15:00": 12, "16:00": 12, "17:00": 28, "18:00": 32, "19:00": 24, "20:00": 24}, "Sunday": {"11:00": 16, "12:00": 32, "13:00": 24, "14:00": 12, "15:00": 8, "16:00": 12, "17:00": 20, "18:00": 32, "19:00": 28, "20:00": 16}}}, "week_of": "2026-10-19", "week_label": "Oct 19 to Oct 25", "data_through": "2026-10-18", "backtest": {"Fishtown": {"old_waste": 241.2, "new_waste": 106.5, "rule_waste": 127.0, "old_wait": 313.2, "new_wait": 279.2, "rule_wait": 148.8, "old_waited_pcs": 52.2, "new_waited_pcs": 25.5, "rule_waited_pcs": 14.0, "rule_extra": 22.0, "old_cooked": 1680.0, "new_cooked": 1530.0}, "Northern Liberties": {"old_waste": 424.0, "new_waste": 106.5, "rule_waste": 140.5, "old_wait": 195.2, "new_wait": 819.0, "rule_wait": 162.8, "old_waited_pcs": 31.8, "new_waited_pcs": 47.0, "rule_waited_pcs": 14.7, "rule_extra": 38.7, "old_cooked": 1680.0, "new_cooked": 1343.3}}, "backtest_range": "2026-09-07 to 2026-10-18", "lbs_per_piece": 0.42, "cost_per_piece": 1.1, "fry_minutes": 12, "backup_at": 6, "backup_drop": 4, "hold_minutes": 90};
 // Which day it is right now (recomputed every render, so it rolls over at midnight)
 let dayName = todayName();
