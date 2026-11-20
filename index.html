@@ -72,10 +72,21 @@
 
 <script>
 const D = {"locations": ["Fishtown", "Northern Liberties"], "days": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"], "hours": ["11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00", "20:00"], "plan": {"Fishtown": {"Monday": {"11:00": 16, "12:00": 32, "13:00": 24, "14:00": 8, "15:00": 4, "16:00": 12, "17:00": 24, "18:00": 32, "19:00": 24, "20:00": 16}, "Tuesday": {"11:00": 16, "12:00": 36, "13:00": 24, "14:00": 4, "15:00": 8, "16:00": 8, "17:00": 24, "18:00": 32, "19:00": 24, "20:00": 16}, "Wednesday": {"11:00": 16, "12:00": 40, "13:00": 24, "14:00": 8, "15:00": 8, "16:00": 8, "17:00": 24, "18:00": 36, "19:00": 28, "20:00": 12}, "Thursday": {"11:00": 20, "12:00": 40, "13:00": 28, "14:00": 8, "15:00": 8, "16:00": 12, "17:00": 32, "18:00": 36, "19:00": 20, "20:00": 20}, "Friday": {"11:00": 24, "12:00": 44, "13:00": 24, "14:00": 12, "15:00": 8, "16:00": 16, "17:00": 36, "18:00": 32, "19:00": 24, "20:00": 24}, "Saturday": {"11:00": 28, "12:00": 36, "13:00": 28, "14:00": 12, "15:00": 12, "16:00": 12, "17:00": 44, "18:00": 28, "19:00": 20, "20:00": 24}, "Sunday": {"11:00": 20, "12:00": 40, "13:00": 28, "14:00": 8, "15:00": 8, "16:00": 12, "17:00": 36, "18:00": 36, "19:00": 20, "20:00": 24}}, "Northern Liberties": {"Monday": {"11:00": 12, "12:00": 28, "13:00": 20, "14:00": 4, "15:00": 4, "16:00": 8, "17:00": 20, "18:00": 24, "19:00": 20, "20:00": 12}, "Tuesday": {"11:00": 16, "12:00": 28, "13:00": 16, "14:00": 4, "15:00": 8, "16:00": 8, "17:00": 20, "18:00": 28, "19:00": 20, "20:00": 12}, "Wednesday": {"11:00": 16, "12:00": 28, "13:00": 20, "14:00": 4, "15:00": 8, "16:00": 8, "17:00": 20, "18:00": 28, "19:00": 20, "20:00": 12}, "Thursday": {"11:00": 16, "12:00": 36, "13:00": 20, "14:00": 8, "15:00": 8, "16:00": 8, "17:00": 20, "18:00": 32, "19:00": 20, "20:00": 16}, "Friday": {"11:00": 24, "12:00": 40, "13:00": 24, "14:00": 12, "15:00": 4, "16:00": 12, "17:00": 28, "18:00": 40, "19:00": 20, "20:00": 20}, "Saturday": {"11:00": 24, "12:00": 40, "13:00": 28, "14:00": 8, "15:00": 12, "16:00": 8, "17:00": 32, "18:00": 40, "19:00": 20, "20:00": 20}, "Sunday": {"11:00": 16, "12:00": 36, "13:00": 24, "14:00": 8, "15:00": 4, "16:00": 12, "17:00": 24, "18:00": 36, "19:00": 24, "20:00": 16}}}, "week_of": "2026-10-19", "data_through": "2026-10-18", "backtest": {"Fishtown": {"old_waste": 243.8, "new_waste": 63.0, "old_out": 7.2, "new_out": 2.2, "old_cooked": 1680.0, "new_cooked": 1528.0, "old_short": 33.8, "new_short": 5.0, "old_waste_lbs": 102, "new_waste_lbs": 26}, "Northern Liberties": {"old_waste": 421.0, "new_waste": 66.8, "old_out": 3.5, "new_out": 7.2, "old_cooked": 1680.0, "new_cooked": 1324.0, "old_short": 16.2, "new_short": 18.0, "old_waste_lbs": 177, "new_waste_lbs": 28}}, "backtest_range": "2026-09-21 to 2026-10-18", "lbs_per_piece": 0.42, "cost_per_piece": 1.1};
-const today = new Date();
-const dayName = D.days[(today.getDay() + 6) % 7];
-let loc = localGet("loc") || D.locations[0];
+// Which day it is right now (recomputed every render, so it rolls over at midnight)
+let dayName = todayName();
+// The store can be fixed per screen with ?store=Fishtown in the link; otherwise the last one tapped is remembered.
+const urlStore = new URLSearchParams(location.search).get("store");
+let loc = matchStore(urlStore) || matchStore(localGet("loc")) || D.locations[0];
 let day = dayName;
+let followToday = true;   // the screen follows the clock unless someone picks another day
+const loadedOn = new Date().toDateString();
+
+function todayName(){ return D.days[(new Date().getDay() + 6) % 7]; }
+function matchStore(s){
+  if (!s) return null;
+  const k = s.toLowerCase().replace(/[^a-z]/g, "");
+  return D.locations.find(l => l.toLowerCase().replace(/[^a-z]/g, "") === k) || null;
+}
 
 function localGet(k){ try { return localStorage.getItem(k); } catch(e){ return null; } }
 function localSet(k,v){ try { localStorage.setItem(k,v); } catch(e){} }
@@ -143,9 +154,18 @@ function render() {
     `<tr class="tot"><td>Total</td>` + D.days.map(d => `<td>${hours.reduce((s,x)=>s+D.plan[loc][d][x],0)}</td>`).join("") + "</tr>";
 }
 function setLoc(l){ loc = l; localSet("loc", l); render(); }
-document.getElementById("day").onchange = e => { day = e.target.value; render(); };
+document.getElementById("day").onchange = e => {
+  day = e.target.value; followToday = (day === todayName()); render();
+};
+function tick(){
+  // New day: reload once so a screen left on all week picks up the latest weekly plan.
+  if (new Date().toDateString() !== loadedOn && new Date().getHours() >= 4) { location.reload(); return; }
+  dayName = todayName();
+  if (followToday) day = dayName;
+  render();
+}
 render();
-setInterval(() => { if (day === dayName) render(); }, 60000);
+setInterval(tick, 30000);
 </script>
 </body>
 </html>

@@ -72,10 +72,21 @@
 
 <script>
 const D = /*DATA*/null;
-const today = new Date();
-const dayName = D.days[(today.getDay() + 6) % 7];
-let loc = localGet("loc") || D.locations[0];
+// Which day it is right now (recomputed every render, so it rolls over at midnight)
+let dayName = todayName();
+// The store can be fixed per screen with ?store=Fishtown in the link; otherwise the last one tapped is remembered.
+const urlStore = new URLSearchParams(location.search).get("store");
+let loc = matchStore(urlStore) || matchStore(localGet("loc")) || D.locations[0];
 let day = dayName;
+let followToday = true;   // the screen follows the clock unless someone picks another day
+const loadedOn = new Date().toDateString();
+
+function todayName(){ return D.days[(new Date().getDay() + 6) % 7]; }
+function matchStore(s){
+  if (!s) return null;
+  const k = s.toLowerCase().replace(/[^a-z]/g, "");
+  return D.locations.find(l => l.toLowerCase().replace(/[^a-z]/g, "") === k) || null;
+}
 
 function localGet(k){ try { return localStorage.getItem(k); } catch(e){ return null; } }
 function localSet(k,v){ try { localStorage.setItem(k,v); } catch(e){} }
@@ -143,9 +154,18 @@ function render() {
     `<tr class="tot"><td>Total</td>` + D.days.map(d => `<td>${hours.reduce((s,x)=>s+D.plan[loc][d][x],0)}</td>`).join("") + "</tr>";
 }
 function setLoc(l){ loc = l; localSet("loc", l); render(); }
-document.getElementById("day").onchange = e => { day = e.target.value; render(); };
+document.getElementById("day").onchange = e => {
+  day = e.target.value; followToday = (day === todayName()); render();
+};
+function tick(){
+  // New day: reload once so a screen left on all week picks up the latest weekly plan.
+  if (new Date().toDateString() !== loadedOn && new Date().getHours() >= 4) { location.reload(); return; }
+  dayName = todayName();
+  if (followToday) day = dayName;
+  render();
+}
 render();
-setInterval(() => { if (day === dayName) render(); }, 60000);
+setInterval(tick, 30000);
 </script>
 </body>
 </html>

@@ -1,25 +1,47 @@
 # Coop Chicken: hourly cook plan
 
-A fry-station screen that tells the kitchen how many pieces of chicken to drop each hour, for each location and day of the week. It replaces the fixed 24 pieces every hour.
+A screen for above the fry line that tells the cook how many pieces of chicken to drop each hour. It replaces the fixed 24 pieces every hour with a number that follows what each hour actually sells, for each store and day of the week.
 
-**Open `index.html`.** Tap your store. The big yellow number is what to drop right now. The list below it is the rest of today. At the bottom, a color-coded snapshot shows the whole week (brighter yellow = busier hour). It works on a phone, tablet, or a screen above the fry line.
+**Live screen:** https://lutonicazteca17.github.io/coop-chicken-cook-plan/
 
-## Updating it each week
+## Setting up the screen (one time, 2 minutes)
 
-1. Put the new Toast export in `data/` as `toast_hourly_sales.csv`. Same columns: `date, location, hour, fried_chicken_pieces_sold`. Optionally add the new `waste_log.csv` and `current_cook_schedule.csv`.
-2. Run `python3 cook_plan.py`. It needs only Python 3, with no installs.
-3. `index.html` is rebuilt with next week's plan. The terminal prints the plan and the test results.
+Open the link for your store on the tablet or TV above the fry line, and leave it open:
+
+- Fishtown: https://lutonicazteca17.github.io/coop-chicken-cook-plan/?store=fishtown
+- Northern Liberties: https://lutonicazteca17.github.io/coop-chicken-cook-plan/?store=northern-liberties
+
+That's all. The screen follows the clock on the device:
+
+- **Before 11 AM:** it shows the first drop of the day.
+- **Each hour:** the big yellow number changes to that hour's drop, and the line under it shows the next one.
+- **After the last drop:** it says "Done for today."
+- **At midnight:** it switches to the next day. Each morning it reloads itself, so it picks up the newest weekly plan.
+
+At the bottom, a color-coded snapshot shows the whole week (brighter yellow = busier hour). Today's column is outlined.
+
+Make sure the device's clock is set to Eastern time. Keep the screen awake: on an iPad, set Settings > Display & Brightness > Auto-Lock to Never.
+
+## Updating the plan each week
+
+Pathway does this each Monday. To do it yourself:
+
+1. Replace `data/toast_hourly_sales.csv` with the new Toast export. It needs these columns: `date, location, hour, fried_chicken_pieces_sold`. Hours can be written as `11:00`, `9:00 PM`, and so on.
+2. Run `python3 cook_plan.py`. It needs only Python 3, with nothing to install. Macs already have it.
+3. Commit and push. The live screen updates within a couple of minutes, and every screen reloads it the next morning.
+
+Each run saves the plan it made in `plans/`. The next run uses that file to know what the kitchen actually cooked, so it can tell when an hour sold out. If something is wrong with the export (for example, a missing column), the script stops and says exactly what's wrong.
 
 ## How the numbers are made
 
 - **Forecast:** the average pieces sold in that hour, on that weekday, at that store, over the last 6 weeks.
-- **Sold-out hours:** Toast only records what was sold, so when the old 24-piece batch ran out (mostly Fri to Sun at 12 to 1 PM), real demand was higher. Those hours are counted 15% higher.
+- **Sold-out hours:** Toast only records what was sold. When the warmer ran empty (mostly Fri to Sun at 12 to 1 PM), real demand was higher, so those hours are counted 15% higher.
 - **Drop size:** the forecast plus a 30% safety margin, minus what is probably still in the warmer from the last drop, rounded up to a multiple of 4. Sales after the last drop (9 PM) are covered by the 8 PM drop.
 - All settings are at the top of `cook_plan.py`.
 
 ## Does it work?
 
-The plan was built from data through Sep 20, then replayed against the 4 weeks that followed (Sep 21 to Oct 18), with leftovers carried hour to hour the way the kitchen does.
+The plan was built only from data through Sep 20, then replayed against the 4 weeks that followed (Sep 21 to Oct 18), carrying leftovers hour to hour the way the kitchen does.
 
 | Per week | Fixed 24/hour | This plan |
 |---|---|---|
@@ -32,6 +54,6 @@ That's about **$590 a week, or roughly $30K a year**, less chicken in the trash,
 
 ## Assumptions to confirm with the kitchen
 
-- Chicken holds well for about an hour in the warmer, and anything left at close is thrown out (the data confirms leftovers at close equal the waste log).
-- Drop to ready time fits within the hour. A drop is made on the hour, as today.
+- Chicken holds well for about an hour in the warmer, and anything left at close is thrown out. The data confirms that leftovers at close equal the waste log.
+- A drop is made on the hour, as today, and is ready within that hour.
 - The 15% bump for sold-out hours is an estimate. Toast can't see customers who walked away.
