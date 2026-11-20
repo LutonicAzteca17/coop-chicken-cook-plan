@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Coop Chicken Cook Plan</title>
+<style>
+  :root { --bg:#111; --fg:#fff; --mute:#9a9a9a; --hi:#ffcc00; --card:#1e1e1e; --line:#333; --good:#5ad17a; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font-family: -apple-system, system-ui, Arial, sans-serif; }
+  main { max-width: 900px; margin: 0 auto; padding: 16px; }
+  .row { display:flex; gap:8px; flex-wrap:wrap; }
+  button { font-size: 22px; padding: 14px 20px; border-radius: 10px; border: 2px solid var(--line);
+           background: var(--card); color: var(--fg); cursor: pointer; flex:1; }
+  button.on { background: var(--hi); color:#000; border-color: var(--hi); font-weight:700; }
+  select { font-size:18px; padding:10px; background:var(--card); color:var(--fg); border:2px solid var(--line); border-radius:10px; }
+  .now { margin: 16px 0; padding: 24px; border-radius: 16px; background: var(--hi); color:#000; text-align:center; }
+  .now .lbl { font-size: 26px; font-weight: 700; }
+  .now .big { font-size: 96px; font-weight: 900; line-height: 1; margin: 8px 0; }
+  .now .sub { font-size: 22px; }
+  .next { text-align:center; font-size: 24px; color: var(--mute); margin-bottom: 16px; }
+  table { width:100%; border-collapse: collapse; font-size: 26px; }
+  td, th { padding: 10px 12px; border-bottom: 1px solid var(--line); text-align:left; }
+  td.n { text-align:right; font-weight:800; }
+  tr.cur td { background: var(--hi); color:#000; }
+  tr.past td { color: var(--mute); }
+  .was { color: var(--mute); font-size: 18px; }
+  h2 { font-size: 20px; color: var(--mute); font-weight:600; margin: 28px 0 8px; }
+  .week { font-size: 16px; overflow-x:auto; }
+  .week table { font-size: 16px; }
+  .week td, .week th { padding: 6px 8px; text-align:right; }
+  .week th:first-child, .week td:first-child { text-align:left; }
+  .small { font-size: 15px; color: var(--mute); line-height:1.5; }
+  .stat { color: var(--good); font-weight:700; }
+  @media (max-width: 500px) { .now .big { font-size: 72px; } table { font-size: 22px; } }
+  @media print { body { background:#fff; color:#000; } .now, button, select { display:none; } }
+</style>
+</head>
+<body>
+<main>
+  <div class="row" id="locs"></div>
+  <div class="row" style="margin-top:8px; align-items:center; gap:12px;">
+    <select id="day"></select>
+    <span class="small" id="clock"></span>
+  </div>
+
+  <div class="now" id="now"></div>
+  <div class="next" id="next"></div>
+
+  <table id="today"></table>
+
+  <h2>Whole week</h2>
+  <div class="week" id="week"></div>
+
+  <h2>How this works</h2>
+  <div class="small" id="about"></div>
+</main>
+
+<script>
+const D = {"locations": ["Fishtown", "Northern Liberties"], "days": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"], "hours": ["11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00", "20:00"], "plan": {"Fishtown": {"Monday": {"11:00": 16, "12:00": 32, "13:00": 24, "14:00": 8, "15:00": 4, "16:00": 12, "17:00": 24, "18:00": 32, "19:00": 24, "20:00": 16}, "Tuesday": {"11:00": 16, "12:00": 36, "13:00": 24, "14:00": 4, "15:00": 8, "16:00": 8, "17:00": 24, "18:00": 32, "19:00": 24, "20:00": 16}, "Wednesday": {"11:00": 16, "12:00": 40, "13:00": 24, "14:00": 8, "15:00": 8, "16:00": 8, "17:00": 24, "18:00": 36, "19:00": 28, "20:00": 12}, "Thursday": {"11:00": 20, "12:00": 40, "13:00": 28, "14:00": 8, "15:00": 8, "16:00": 12, "17:00": 32, "18:00": 36, "19:00": 20, "20:00": 20}, "Friday": {"11:00": 24, "12:00": 44, "13:00": 24, "14:00": 12, "15:00": 8, "16:00": 16, "17:00": 36, "18:00": 32, "19:00": 24, "20:00": 24}, "Saturday": {"11:00": 28, "12:00": 36, "13:00": 28, "14:00": 12, "15:00": 12, "16:00": 12, "17:00": 44, "18:00": 28, "19:00": 20, "20:00": 24}, "Sunday": {"11:00": 20, "12:00": 40, "13:00": 28, "14:00": 8, "15:00": 8, "16:00": 12, "17:00": 36, "18:00": 36, "19:00": 20, "20:00": 24}}, "Northern Liberties": {"Monday": {"11:00": 12, "12:00": 28, "13:00": 20, "14:00": 4, "15:00": 4, "16:00": 8, "17:00": 20, "18:00": 24, "19:00": 20, "20:00": 12}, "Tuesday": {"11:00": 16, "12:00": 28, "13:00": 16, "14:00": 4, "15:00": 8, "16:00": 8, "17:00": 20, "18:00": 28, "19:00": 20, "20:00": 12}, "Wednesday": {"11:00": 16, "12:00": 28, "13:00": 20, "14:00": 4, "15:00": 8, "16:00": 8, "17:00": 20, "18:00": 28, "19:00": 20, "20:00": 12}, "Thursday": {"11:00": 16, "12:00": 36, "13:00": 20, "14:00": 8, "15:00": 8, "16:00": 8, "17:00": 20, "18:00": 32, "19:00": 20, "20:00": 16}, "Friday": {"11:00": 24, "12:00": 40, "13:00": 24, "14:00": 12, "15:00": 4, "16:00": 12, "17:00": 28, "18:00": 40, "19:00": 20, "20:00": 20}, "Saturday": {"11:00": 24, "12:00": 40, "13:00": 28, "14:00": 8, "15:00": 12, "16:00": 8, "17:00": 32, "18:00": 40, "19:00": 20, "20:00": 20}, "Sunday": {"11:00": 16, "12:00": 36, "13:00": 24, "14:00": 8, "15:00": 4, "16:00": 12, "17:00": 24, "18:00": 36, "19:00": 24, "20:00": 16}}}, "week_of": "2026-10-19", "data_through": "2026-10-18", "backtest": {"Fishtown": {"old_waste": 243.8, "new_waste": 63.0, "old_out": 7.2, "new_out": 2.2, "old_cooked": 1680.0, "new_cooked": 1528.0, "old_short": 33.8, "new_short": 5.0, "old_waste_lbs": 102, "new_waste_lbs": 26}, "Northern Liberties": {"old_waste": 421.0, "new_waste": 66.8, "old_out": 3.5, "new_out": 7.2, "old_cooked": 1680.0, "new_cooked": 1324.0, "old_short": 16.2, "new_short": 18.0, "old_waste_lbs": 177, "new_waste_lbs": 28}}, "backtest_range": "2026-09-21 to 2026-10-18", "lbs_per_piece": 0.42, "cost_per_piece": 1.1};
+const today = new Date();
+const dayName = D.days[(today.getDay() + 6) % 7];
+let loc = localGet("loc") || D.locations[0];
+let day = dayName;
+
+function localGet(k){ try { return localStorage.getItem(k); } catch(e){ return null; } }
+function localSet(k,v){ try { localStorage.setItem(k,v); } catch(e){} }
+
+function nowHour() {
+  const d = new Date();
+  return String(d.getHours()).padStart(2,"0") + ":00";
+}
+function pretty(h) {
+  let n = parseInt(h); const ap = n >= 12 ? "PM" : "AM"; n = n % 12 || 12; return n + " " + ap;
+}
+
+function render() {
+  const plan = D.plan[loc][day];
+  const hours = D.hours;
+  const live = day === dayName;
+  const h = nowHour();
+
+  document.getElementById("locs").innerHTML = D.locations.map(l =>
+    `<button class="${l===loc?'on':''}" onclick="setLoc('${l}')">${l}</button>`).join("");
+  document.getElementById("day").innerHTML = D.days.map(d =>
+    `<option ${d===day?'selected':''}>${d}</option>`).join("");
+  document.getElementById("clock").textContent = live ? "Today, " + new Date().toLocaleTimeString([], {hour:"numeric", minute:"2-digit"}) : "Planning view";
+
+  // NOW card
+  const nowEl = document.getElementById("now"), nextEl = document.getElementById("next");
+  let curIdx = hours.indexOf(h);
+  if (live && curIdx >= 0) {
+    nowEl.style.display = "";
+    nowEl.innerHTML = `<div class="lbl">NOW, ${pretty(h)} DROP</div><div class="big">${plan[h]}</div><div class="sub">pieces</div>`;
+    const nh = hours[curIdx + 1];
+    nextEl.textContent = nh ? `Next: ${pretty(nh)} drop ${plan[nh]}` : "Last drop of the day. No more after this.";
+  } else if (live && h < hours[0]) {
+    nowEl.style.display = "";
+    nowEl.innerHTML = `<div class="lbl">FIRST DROP AT ${pretty(hours[0])}</div><div class="big">${plan[hours[0]]}</div><div class="sub">pieces</div>`;
+    nextEl.textContent = "";
+  } else if (live) {
+    nowEl.style.display = "";
+    nowEl.innerHTML = `<div class="lbl">DONE FOR TODAY</div><div class="big">0</div><div class="sub">No more drops. Log what's left in the waste log.</div>`;
+    nextEl.textContent = "";
+  } else {
+    nowEl.style.display = "none"; nextEl.textContent = "";
+  }
+
+  // Today table
+  const total = hours.reduce((s,x)=>s+plan[x],0);
+  document.getElementById("today").innerHTML =
+    `<tr><th>${day} at ${loc}</th><th style="text-align:right">Drop</th></tr>` +
+    hours.map(x => `<tr class="${live && x===h ? 'cur' : (live && x<h ? 'past':'')}"><td>${pretty(x)}</td><td class="n">${plan[x]}</td></tr>`).join("") +
+    `<tr><td>Total today <span class="was">(was ${hours.length * 24})</span></td><td class="n">${total}</td></tr>`;
+
+  // Week grid
+  document.getElementById("week").innerHTML = "<table><tr><th>" + loc + "</th>" +
+    D.days.map(d=>`<th>${d.slice(0,3)}</th>`).join("") + "</tr>" +
+    hours.map(x => `<tr><td>${pretty(x)}</td>` + D.days.map(d=>`<td>${D.plan[loc][d][x]}</td>`).join("") + "</tr>").join("") +
+    "<tr><td><b>Total</b></td>" + D.days.map(d=>`<td><b>${hours.reduce((s,x)=>s+D.plan[loc][d][x],0)}</b></td>`).join("") + "</tr></table>";
+
+  const b = D.backtest[loc];
+  document.getElementById("about").innerHTML =
+    `Plan for the week of ${D.week_of}, built from Toast sales through ${D.data_through}. ` +
+    `Each number is the average sold in that hour on that weekday over the last 6 weeks, plus 30% safety, minus what is likely still in the warmer from the last drop, rounded up to a multiple of 4. ` +
+    `Hours that sold out are counted 15% higher, since Toast can't see the customers who left. Sales after the last drop are covered by the last drop.<br><br>` +
+    `<b>Tested on ${D.backtest_range}</b> (plan built only from earlier weeks), per week at ${loc}: ` +
+    `waste <span class="stat">${Math.round(b.old_waste)} → ${Math.round(b.new_waste)} pieces</span> (${b.old_waste_lbs} → ${b.new_waste_lbs} lbs, about $${Math.round(b.old_waste*D.cost_per_piece)} → $${Math.round(b.new_waste*D.cost_per_piece)} a week), ` +
+    `pieces customers wanted but could not get <span class="stat">${Math.round(b.old_short)} → ${Math.round(b.new_short)}</span>.<br><br>` +
+    `If an hour runs out, or you're tossing a lot, tell your manager. The plan updates every week from the new Toast export.`;
+}
+function setLoc(l){ loc = l; localSet("loc", l); render(); }
+document.getElementById("day").onchange = e => { day = e.target.value; render(); };
+render();
+setInterval(() => { if (day === dayName) render(); }, 60000);
+</script>
+</body>
+</html>
