@@ -23,7 +23,7 @@ from pathlib import Path
 
 # ---- Settings a manager might change -------------------------------------
 WEEKS_OF_HISTORY = 6     # how many recent weeks the forecast averages
-BUFFER = 0.30            # cook 30% above the forecast (tested: best balance of waste vs running out)
+BUFFER = 0.20            # cook 20% above the forecast (tested with the 90-minute hold: best balance of waste vs running out)
 ROUND_TO = 4             # drop in multiples of 4 pieces
 MIN_DROP = 4             # never drop fewer than this in a cook hour
 MIN_EXTRA = 4            # ...but always at least 4 pieces above the forecast (protects slow afternoon hours)
@@ -32,6 +32,7 @@ STOCKOUT_UPLIFT = 1.15   # ASSUMPTION: when the warmer ran empty, plan 15% above
 COST_PER_PIECE = 1.10    # what one raw piece costs (from Dre)
 CURRENT_BATCH = 24       # today's fixed batch, used for the before/after comparison
 BACKTEST_WEEKS = 6       # weeks replayed to test the plan (same 6-week window the forecast uses)
+HOLD_MINUTES = 90        # Coop's rule: chicken is tossed after 90 minutes under the heat lamp
 BACKUP_DROP = 4          # "running out before the next drop? drop 4 more"
 DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 
@@ -115,21 +116,36 @@ def by_day(sales):
     return days
 
 
-def simulate(hours_sold, plan, cook_hours, backup=0):
-    """Replay one day of real Toast sales: cook `plan[hour]` at each cook hour,
-    sell, carry leftovers. With backup > 0, the cook drops that many more when
-    the warmer would run out during a cook hour.
-    Returns (pieces thrown out at close, hours the warmer ended empty, extra pieces dropped)."""
-    on_hand, empty, extra = 0, 0, 0
+def simulate(hours_sold, plan, cook_hours, backup=0, hold=None):
+    """Replay one day of real Toast sales in half-hour steps. Each drop goes in at
+    the top of its hour. Oldest chicken is sold first. With `hold` (minutes), any
+    piece older than that is tossed. With backup > 0, the cook drops that many
+    more whenever the warmer is empty and customers are waiting during a cook hour.
+    Returns (pieces thrown out, hours the warmer ended empty, extra pieces dropped)."""
+    batches, tossed, empty, extra = [], 0, 0, 0     # batches: [minute cooked, pieces]
     for h, sold in hours_sold:
-        on_hand += plan.get(h, 0) if h in cook_hours else 0
-        if backup and h in cook_hours and sold > on_hand:
-            on_hand += backup
-            extra += backup
-        on_hand -= min(on_hand, sold)
-        if on_hand == 0 and h in cook_hours:
+        start = int(h[:2]) * 60
+        if h in cook_hours and plan.get(h, 0):
+            batches.append([start, plan[h]])
+        halves = [sold // 2, sold - sold // 2]
+        for i, want in enumerate(halves):
+            now = start + 30 * i
+            if hold:
+                for bt in batches:
+                    if now - bt[0] > hold - 30:      # would pass the limit during this half hour
+                        tossed += bt[1]; bt[1] = 0
+                batches = [bt for bt in batches if bt[1] > 0]
+            if backup and h in cook_hours and want > sum(bt[1] for bt in batches):
+                batches.append([now, backup]); extra += backup
+            while want and batches:
+                take = min(want, batches[0][1])
+                batches[0][1] -= take; want -= take
+                if batches[0][1] == 0:
+                    batches.pop(0)
+        if h in cook_hours and not batches:
             empty += 1
-    return on_hand, empty, extra
+    tossed += sum(bt[1] for bt in batches)
+    return tossed, empty, extra
 
 
 def estimate_demand(days, cook_hours, used):
@@ -175,13 +191,16 @@ def build_plan(demand, cook_hours, until=None):
     for loc, wd in {(k[0], k[1]) for k in forecast}:
         # Pieces still in the warmer from the last drop count toward this hour,
         # so the buffer doesn't pile up over the day.
+        # With a 90-minute hold, chicken from the last drop can only cover about the
+        # first half of this hour, then it's tossed.
         leftover = 0.0
         for h in cook_hours:
             f = forecast[(loc, wd, h)]
-            need = max(f * (1 + BUFFER), f + MIN_EXTRA) - leftover
+            usable = min(leftover, f / 2)
+            need = max(f * (1 + BUFFER), f + MIN_EXTRA) - usable
             drop = max(MIN_DROP, ROUND_TO * math.ceil(need / ROUND_TO))
             plan[(loc, wd)][h] = drop
-            leftover = max(0.0, leftover + drop - f)
+            leftover = max(0.0, drop - (f - usable))
     return plan
 
 
@@ -210,9 +229,9 @@ def backtest(demand, days, cook_hours, lbs_per_piece):
             if not (wk_start <= d < wk_start + timedelta(days=7)):
                 continue
             p = plan[(loc, d.weekday())]
-            w0, e0, _ = simulate(hours, flat, cook_hours)
-            w1, e1, _ = simulate(hours, p, cook_hours)
-            w2, e2, x2 = simulate(hours, p, cook_hours, backup=BACKUP_DROP)
+            w0, e0, _ = simulate(hours, flat, cook_hours, hold=HOLD_MINUTES)
+            w1, e1, _ = simulate(hours, p, cook_hours, hold=HOLD_MINUTES)
+            w2, e2, x2 = simulate(hours, p, cook_hours, backup=BACKUP_DROP, hold=HOLD_MINUTES)
             r = res[loc]
             r["old_waste"] += w0; r["new_waste"] += w1; r["rule_waste"] += w2
             r["old_empty"] += e0; r["new_empty"] += e1; r["rule_empty"] += e2
